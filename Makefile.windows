@@ -1,0 +1,31 @@
+# Makefile for Windows (MSYS2).
+CXX := x86_64-w64-mingw32-g++
+CXXFLAGS := -std=c++14 -Wall -Werror
+
+SRC_DIR := src
+OBJ_DIR := obj
+
+TARGET := nomp
+
+# Find all cpp files recursively
+SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
+
+# Map src/.../*.cpp to bin/.../*.o
+OBJS := $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+
+# Default target
+all: $(TARGET)
+
+# link
+$(TARGET): $(OBJS)
+	$(CXX) $(OBJS) -o $@ -lmpv
+
+# compile .cpp files into .o files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# If running with clean argument,
+# clean up object files and binary.
+clean:
+	rm -rf nomp $(OBJ_DIR)
