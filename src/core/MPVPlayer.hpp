@@ -1,7 +1,7 @@
 #include <mpv/client.h>
 #include <string>
 
-class mpvPlayer
+class MPVPlayer
 {
     private:
         // mpvHandle represents the mpv audio player itself.
@@ -10,7 +10,7 @@ class mpvPlayer
         // and events.
         mpv_handle *mpvHandle;
     public:
-        mpvPlayer();
-        ~mpvPlayer();
+        MPVPlayer();
+        ~MPVPlayer();
         void play(const std::string &filename);
 };
