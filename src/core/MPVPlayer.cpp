@@ -24,16 +24,6 @@ MPVPlayer::MPVPlayer()
 
     // Disable video features
     mpv_set_property_string(mpvHandle, "vo", "none");
-
-    // Determine the correct audio API depending
-    // on the OS.
-#if defined(__linux__)
-    mpv_set_property_string(mpvHandle, "ao", "alsa");
-#elif defined(__APPLE__)
-    mpv_set_property_string(mpvHandle, "ao", "coreaudio");
-#elif defined(_WIN64)
-    mpv_set_property_string(mpvHandle, "ao", "wasapi");
-#endif
 }
 
 MPVPlayer::~MPVPlayer()
@@ -50,7 +40,7 @@ MPVPlayer::~MPVPlayer()
     mpvHandle = nullptr;
 }
 
-void MPVPlayer::play(const std::string &filename)
+bool MPVPlayer::play(const std::string &filename)
 {
     // This array represents the command sent
     // to the mpv instance along with it's arguments.
@@ -66,7 +56,7 @@ void MPVPlayer::play(const std::string &filename)
     if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
     {
         std::cerr << "Failed to load audio file\n";
-        return;
+        return false;
     }
 
     // Keep playing until we reach EOF
@@ -80,4 +70,5 @@ void MPVPlayer::play(const std::string &filename)
             break;
         }
     }
+    return true;
 }
