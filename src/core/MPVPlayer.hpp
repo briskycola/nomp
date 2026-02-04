@@ -12,5 +12,5 @@ class MPVPlayer
     public:
         MPVPlayer();
         ~MPVPlayer();
-        void play(const std::string &filename);
+        bool play(const std::string &filename);
 };
