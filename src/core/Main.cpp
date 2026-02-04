@@ -1,4 +1,4 @@
-#include "mpvPlayer.hpp"
+#include "MPVPlayer.hpp"
 #include <iostream>
 #include <csignal>
 #include <memory>
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     // Create the mpv instance and
     // play the audio file.
     const std::string filename = argv[1];
-    std::unique_ptr<mpvPlayer> player = std::make_unique<mpvPlayer>();
+    std::unique_ptr<MPVPlayer> player = std::make_unique<MPVPlayer>();
     player->play(filename);
     return 0;
 }

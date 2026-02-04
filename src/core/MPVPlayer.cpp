@@ -1,11 +1,11 @@
-#include "mpvPlayer.hpp"
+#include "MPVPlayer.hpp"
 #include <iostream>
 #include <array>
 #include <csignal>
 
 extern volatile sig_atomic_t isPlaying;
 
-mpvPlayer::mpvPlayer()
+MPVPlayer::MPVPlayer()
 {
     // Create a new mpv instance.
     mpvHandle = mpv_create();
@@ -36,7 +36,7 @@ mpvPlayer::mpvPlayer()
 #endif
 }
 
-mpvPlayer::~mpvPlayer()
+MPVPlayer::~MPVPlayer()
 {
     if (!isPlaying)
     {
@@ -50,7 +50,7 @@ mpvPlayer::~mpvPlayer()
     mpvHandle = nullptr;
 }
 
-void mpvPlayer::play(const std::string &filename)
+void MPVPlayer::play(const std::string &filename)
 {
     // This array represents the command sent
     // to the mpv instance along with it's arguments.
