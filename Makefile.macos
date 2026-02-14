@@ -27,12 +27,12 @@ all: $(TARGET)
 
 # link
 $(TARGET): $(OBJS)
-	$(CXX) $(OBJS) -o $@ $(MPV_LIBS) $(NCURSES_LIBS)
+	$(CXX) $(OBJS) -o $@ $(MPV_LIBS) $(NCURSES_LIBS) $(FLUIDSYNTH_LIBS)
 
 # compile .cpp files into .o files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(MPV_CXXFLAGS) $(NCURSES_CXXFLAGS) $(FLUIDSYNTH_CXXFLAGS)-c $< -o $@
+	$(CXX) $(CXXFLAGS) $(MPV_CXXFLAGS) $(NCURSES_CXXFLAGS) $(FLUIDSYNTH_CXXFLAGS) -c $< -o $@
 
 # If running with clean argument,
 # clean up object files and binary.
