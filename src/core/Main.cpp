@@ -1,5 +1,7 @@
+#include "nctui.hpp"
 #include "MPVPlayer.hpp"
 #include "FluidSynthPlayer.hpp"
+#include <thread>
 #include <iostream>
 #include <csignal>
 #include <memory>
@@ -11,8 +13,18 @@ void handleSignal(int signal)
     isPlaying = false;
 }
 
+void curses(){
+    init_curses();
+    while(TRUE){
+        displayScreen();
+        selectWindow();
+    }
+}
+
 int main(int argc, char **argv)
 {
+    //initialize ncurses library and windows
+    std::thread cur(curses);
     // Check for signals from the OS.
     signal(SIGINT, handleSignal);
     signal(SIGTERM, handleSignal);
@@ -45,6 +57,5 @@ int main(int argc, char **argv)
         std::cerr << "Usage: " << argv[0] << " <midi-file> <soundfont-file>\n";
         return 1;
     }
-
     return 0;
 }
