@@ -24,6 +24,11 @@ FluidSynthPlayer::FluidSynthPlayer()
 
 FluidSynthPlayer::~FluidSynthPlayer()
 {
+    if (!isPlaying)
+    {
+        std::cerr << "Signal handled\n";
+    }
+
     // Remove all FluidSynth elements
     // from the heap.
     delete_fluid_audio_driver(audioDriver);
