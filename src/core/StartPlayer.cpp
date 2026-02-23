@@ -1,34 +1,11 @@
-#include "nctui.hpp"
+#include "StartPlayer.hpp"
 #include "MPVPlayer.hpp"
 #include "FluidSynthPlayer.hpp"
-#include <thread>
 #include <iostream>
-#include "StartPlayer.hpp"
-#include <csignal>
+#include <memory>
 
-volatile sig_atomic_t isPlaying = true;
-
-void handleSignal(int signal)
+bool startPlayer(int argc, char **argv)
 {
-    isPlaying = false;
-}
-
-void curses(){
-    init_curses();
-    while(TRUE){
-        displayScreen();
-        selectWindow();
-    }
-}
-
-int main(int argc, char **argv)
-{
-    //initialize ncurses library and windows
-    std::thread cur(curses);
-    // Check for signals from the OS.
-    signal(SIGINT, handleSignal);
-    signal(SIGTERM, handleSignal);
-    
     // Check if the user entered the audio file
     // or MIDI + SoundFont as an argument
     if (argc == 2)
@@ -55,9 +32,7 @@ int main(int argc, char **argv)
     {
         std::cerr << "Usage: " << argv[0] << " <audio-file>\n";
         std::cerr << "Usage: " << argv[0] << " <midi-file> <soundfont-file>\n";
-        return 1;
+        return false;
     }
-    // Start the music player
-    startPlayer(argc, argv);
-    return 0;
+    return true;
 }
