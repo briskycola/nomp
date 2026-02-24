@@ -1,7 +1,7 @@
 //IMPORTANT
 //X and Y are "flipped" in terminal
 //X is up and down Y is left-right
-
+#include "StartPlayer.hpp"
 #include "nctui.hpp"
 #include <iostream>
 #include <ncurses.h>
@@ -79,7 +79,9 @@ void songListSelect(WINDOW *win)
     wbkgd(win,COLOR_PAIR(3));
     //another array/list for scrolling through songs? esc to exit?
     // some operation ...
-    wgetch(win);
+    if(wgetch(win)==KEY_ENTER){
+     startPlayer("/Users/rileywhite/Downloads/Rosalina_Observatory_2.mp3");   
+    }
     wbkgd(win,COLOR_PAIR(0));
 }
 
