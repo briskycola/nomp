@@ -6,6 +6,7 @@
 #include <iostream>
 #include <ncurses.h>
 #include <cstdlib>
+#include <vector>
 
 //Global Vars
 //Add more windows here for each tab/button/thing
@@ -79,8 +80,9 @@ void songListSelect(WINDOW *win)
     wbkgd(win,COLOR_PAIR(3));
     //another array/list for scrolling through songs? esc to exit?
     // some operation ...
-    if(wgetch(win)==KEY_ENTER){
-     startPlayer("/Users/rileywhite/Downloads/Rosalina_Observatory_2.mp3");   
+    
+    if(getUserInp(*currWin)==KEY_RIGHT){
+     startPlayer(""); //Hardcode song path for testing   
     }
     wbkgd(win,COLOR_PAIR(0));
 }

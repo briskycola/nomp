@@ -35,7 +35,7 @@ MPVPlayer::~MPVPlayer()
 
     if (mpvHandle)
     {
-        //mpv_terminate_destroy(mpvHandle);
+        mpv_terminate_destroy(mpvHandle);
     }
     mpvHandle = nullptr;
 }
@@ -67,7 +67,7 @@ bool MPVPlayer::play(const std::string &filename)
         event = mpv_wait_event(mpvHandle, 0);
         if (event && event->event_id == MPV_EVENT_END_FILE)
         {
-            break;
+           break;
         }
     }
     return true;

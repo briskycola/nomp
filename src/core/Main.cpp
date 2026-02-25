@@ -11,7 +11,7 @@ void handleSignal(int signal)
 }
 
 void display(){
-    while(TRUE){
+    while(isPlaying){
         displayScreen();
         selectWindow();
     }
@@ -27,6 +27,8 @@ int main(int argc, char** argv)
     std::thread dis(display);
 
     // Start the music player
-    startPlayer("/Users/rileywhite/Downloads/Rosalina_Observatory_2.mp3");
+    //startPlayer("/Users/rileywhite/Downloads/Rosalina_Observatory_2.mp3");
+    dis.join();
+    endwin();
     return 0;
 }
