@@ -24,18 +24,19 @@ void init_curses()
 {
     initscr(); //initializes ncurses
     start_color(); //starts color
-    init_pair(1, COLOR_BLUE, COLOR_RED); // color pair definition, change later, testing
-    init_pair(2,COLOR_GREEN, COLOR_BLACK);
+    init_pair(1, COLOR_BLUE, COLOR_GREEN); // color pair definition, change later, testing
+    init_pair(2,COLOR_WHITE, COLOR_BLACK);
     init_pair(3,COLOR_WHITE, COLOR_WHITE);
     noecho(); //dont show user input
+    cbreak(); //all input types
     curs_set(0); //gets rid of cursor
 
     //initialize windows here
     //positions have to be hard-coded
-    songList = newwin(30, 25, 1, 1); //newwin(xlength, ylength, xpos, ypos);
-    currPlay = newwin(25,50, 1, 30);
-    window3 = newwin(25,50, 1, 90);
-    window4 = newwin(15,20,1,150);
+    songList = newwin(45, 39, 1, 1); //newwin(xlength, ylength, xpos, ypos);
+    currPlay = newwin(30,125, 1, 42);
+    window3 = newwin(15,125, 31, 42);
+    window4 = newwin(45,39,1,169);
     
     //Not sure if this VVV  is necessary, i'll test later
     keypad(songList, TRUE); //allows you to use keypad
@@ -57,6 +58,10 @@ void displayScreen()
 {
     //function call to read songs off of folder/playlist here
     //display text using mvwprintw([window], x, y
+    mvwprintw(songList,2,10,"Song Queue");
+    mvwprintw(currPlay,2,10,"Currently Playing");
+    mvwprintw(window3,2,10,"Window 3");
+    mvwprintw(window4,2,10,"Window 4");
         for(auto a : windows){
         if(a==*currWin){
             wattron(a,COLOR_PAIR(1));
@@ -80,9 +85,21 @@ void songListSelect(WINDOW *win)
     wbkgd(win,COLOR_PAIR(3));
     //another array/list for scrolling through songs? esc to exit?
     // some operation ...
-    
-    if(getUserInp(*currWin)==KEY_RIGHT){
-     startPlayer(""); //Hardcode song path for testing   
+    while(getUserInp(*currWin)!=127)
+    {
+        switch (userInput)
+        {
+            case KEY_DOWN:
+                //move down in song list
+                // highlight current row
+                break;
+            case KEY_UP:
+                //move up in song list
+                // highlight current row
+                break;
+            case 'p':
+                startPlayer("");   
+        }
     }
     wbkgd(win,COLOR_PAIR(0));
 }
@@ -107,7 +124,7 @@ void selectWindow()
         currWin++; //seg fault here, not sure why    <--this
         };
         break;
-    case KEY_DOWN:
+    case '\n': //enter pressed
         songListSelect(*currWin);
         break;
     default:
