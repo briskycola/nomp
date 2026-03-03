@@ -32,11 +32,18 @@ void init_curses()
     curs_set(0); //gets rid of cursor
 
     //initialize windows here
-    //positions have to be hard-coded
-    songList = newwin(45, 39, 1, 1); //newwin(xlength, ylength, xpos, ypos);
-    currPlay = newwin(30,125, 1, 42);
-    window3 = newwin(15,125, 31, 42);
-    window4 = newwin(45,39,1,169);
+    //positions have to be hard-codedi
+    // Riley's Terminal That This Was Designed After's Dimensions
+    // Left-Right: 208
+    // Top-Bottom: 47
+    //songList ratios(45/47 | .95, 39/208 | .1875, 1, 1)
+    // int(45/47) * (NewWindowSize/MaxWindowSize)
+    int windowColRatio(COLS/208);
+    int windowLnRatio(LINES/47);
+    songList = newwin(45*windowLnRatio, 39*windowColRatio, 1, 1); //newwin(xlength, ylength, xpos, ypos);
+    currPlay = newwin(30*windowLnRatio,125*windowColRatio, 1, 42);
+    window3 = newwin(15*windowLnRatio,125*windowColRatio, 31, 42);
+    window4 = newwin(45*windowLnRatio,39*windowColRatio, 1, 169);
     
     //Not sure if this VVV  is necessary, i'll test later
     keypad(songList, TRUE); //allows you to use keypad
@@ -98,7 +105,7 @@ void songListSelect(WINDOW *win)
                 // highlight current row
                 break;
             case 'p':
-                startPlayer("");   
+                startPlayer("/Users/rileywhite/TerminalStuff/sftwr380/nomp/songs/Rosalina_Observatory_2.mp3");   
         }
     }
     wbkgd(win,COLOR_PAIR(0));
