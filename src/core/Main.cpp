@@ -1,4 +1,5 @@
 #include "StartPlayer.hpp"
+#include "CbreakMode.hpp"
 #include <csignal>
 
 volatile sig_atomic_t isPlaying = true;
@@ -14,7 +15,15 @@ int main(int argc, char **argv)
     signal(SIGINT, handleSignal);
     signal(SIGTERM, handleSignal);
 
-    // Start the music player
+    termios original;
+
+    // Enable Cbreak mode.
+    enableCbreakMode(original);
+
+    // Start the music player.
     startPlayer(argc, argv);
+
+    // Disable Cbreak mode.
+    disableCbreakMode(original);
     return 0;
 }
