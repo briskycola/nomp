@@ -22,28 +22,21 @@ int userInput; //this being an int and not a char is weird I know
 //Ncurses initialization
 void init_curses()
 {
+    setlocale(LC_ALL, "");
     initscr(); //initializes ncurses
     start_color(); //starts color
-    init_pair(1, COLOR_BLUE, COLOR_GREEN); // color pair definition, change later, testing
-    init_pair(2,COLOR_WHITE, COLOR_BLACK);
+    init_pair(1, COLOR_WHITE, COLOR_MAGENTA); // color pair definition, change later, testing
+    init_pair(2,COLOR_CYAN, COLOR_BLACK);
     init_pair(3,COLOR_WHITE, COLOR_WHITE);
     noecho(); //dont show user input
     cbreak(); //all input types
     curs_set(0); //gets rid of cursor
 
     //initialize windows here
-    //positions have to be hard-codedi
-    // Riley's Terminal That This Was Designed After's Dimensions
-    // Left-Right: 208
-    // Top-Bottom: 47
-    //songList ratios(45/47 | .95, 39/208 | .1875, 1, 1)
-    // int(45/47) * (NewWindowSize/MaxWindowSize)
-    int windowColRatio(COLS/208);
-    int windowLnRatio(LINES/47);
-    songList = newwin(45*windowLnRatio, 39*windowColRatio, 1, 1); //newwin(xlength, ylength, xpos, ypos);
-    currPlay = newwin(30*windowLnRatio,125*windowColRatio, 1, 42);
-    window3 = newwin(15*windowLnRatio,125*windowColRatio, 31, 42);
-    window4 = newwin(45*windowLnRatio,39*windowColRatio, 1, 169);
+    songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength^v, ylength<>, xpos^v, ypos<>);
+    currPlay = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
+    window3 = newwin((LINES/3),COLS/2, 2*(LINES/3), (COLS/4));
+    window4 = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
     
     //Not sure if this VVV  is necessary, i'll test later
     keypad(songList, TRUE); //allows you to use keypad
