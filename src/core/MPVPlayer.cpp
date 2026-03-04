@@ -1,4 +1,5 @@
 #include "MPVPlayer.hpp"
+#include "CbreakMode.hpp"
 #include <iostream>
 #include <array>
 #include <csignal>
@@ -40,6 +41,30 @@ MPVPlayer::~MPVPlayer()
     mpvHandle = nullptr;
 }
 
+bool MPVPlayer::togglePause()
+{
+    // Check if we can get pause data
+    // from mpv in the first place.
+    if (mpv_get_property(mpvHandle, "pause", MPV_FORMAT_FLAG, &isPaused) < 0)
+    {
+        std::cerr << "Could not get pause data from mpv\n";
+        return false;
+    }
+
+    // Determine whether the player is
+    // paused or not.
+    if (isPaused == 0) isPaused = 1;
+    else isPaused = 0;
+
+    // Pause/Resume the player itself.
+    if (mpv_set_property(mpvHandle, "pause", MPV_FORMAT_FLAG, &isPaused) < 0)
+    {
+        std::cerr << "Could not pause/resume mpv instance\n";
+        return false;
+    }
+    return true;
+}
+
 bool MPVPlayer::play(const std::string &filename)
 {
     // This array represents the command sent
@@ -51,6 +76,9 @@ bool MPVPlayer::play(const std::string &filename)
 
     // Used to store mpv events (EOF, interrupt, etc).
     mpv_event *event;
+
+    // TEMP: store char from STDIN
+    char ch;
 
     // Send the command to the mpv instance.
     if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
@@ -69,6 +97,9 @@ bool MPVPlayer::play(const std::string &filename)
         {
             break;
         }
+
+        ch = getCharFromKeyboard();
+        if (ch == 'p') togglePause();
     }
     return true;
 }
