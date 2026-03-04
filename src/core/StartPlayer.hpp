@@ -1,1 +1,3 @@
-bool startPlayer(int argc, char **argv);
+#include <string>
+
+bool startPlayer(const std::string &filename);

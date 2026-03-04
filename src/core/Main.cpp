@@ -1,10 +1,14 @@
 #include "nctui.hpp"
+<<<<<<< HEAD
 #include "MPVPlayer.hpp"
 #include "FluidSynthPlayer.hpp"
 #include <thread>
 #include <iostream>
+=======
+>>>>>>> Reddd
 #include "StartPlayer.hpp"
 #include <csignal>
+#include <thread>
 
 volatile sig_atomic_t isPlaying = true;
 
@@ -13,15 +17,24 @@ void handleSignal(int signal)
     isPlaying = false;
 }
 
+<<<<<<< HEAD
 void curses(){
     init_curses();
     while(TRUE){
+=======
+void display(){
+    while(isPlaying){
+>>>>>>> Reddd
         displayScreen();
         selectWindow();
     }
 }
 
+<<<<<<< HEAD
 int main(int argc, char **argv)
+=======
+int main(int argc, char** argv)
+>>>>>>> Reddd
 {
     //initialize ncurses library and windows
     std::thread cur(curses);
@@ -40,6 +53,7 @@ int main(int argc, char **argv)
         player->play(filename);
     }
 
+<<<<<<< HEAD
     else if (argc == 3)
     {
         // Create the FluidSynth instance and
@@ -57,7 +71,14 @@ int main(int argc, char **argv)
         std::cerr << "Usage: " << argv[0] << " <midi-file> <soundfont-file>\n";
         return 1;
     }
+=======
+    init_curses();
+    std::thread dis(display);
+
+>>>>>>> Reddd
     // Start the music player
-    startPlayer(argc, argv);
+    //startPlayer("/Users/rileywhite/Downloads/Rosalina_Observatory_2.mp3");
+    dis.join();
+    endwin();
     return 0;
 }

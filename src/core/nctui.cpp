@@ -1,11 +1,19 @@
 //IMPORTANT
 //X and Y are "flipped" in terminal
 //X is up and down Y is left-right
+<<<<<<< HEAD
 
+=======
+#include "StartPlayer.hpp"
+>>>>>>> Reddd
 #include "nctui.hpp"
 #include <iostream>
 #include <ncurses.h>
 #include <cstdlib>
+<<<<<<< HEAD
+=======
+#include <vector>
+>>>>>>> Reddd
 
 //Global Vars
 //Add more windows here for each tab/button/thing
@@ -21,6 +29,7 @@ int userInput; //this being an int and not a char is weird I know
 //Ncurses initialization
 void init_curses()
 {
+<<<<<<< HEAD
     initscr(); //initializes ncurses
     start_color(); //starts color
     init_pair(1, COLOR_BLUE, COLOR_RED); // color pair definition, change later, testing
@@ -35,6 +44,23 @@ void init_curses()
     currPlay = newwin(25,50, 1, 30);
     window3 = newwin(25,50, 1, 90);
     window4 = newwin(15,20,1,150);
+=======
+    setlocale(LC_ALL, "");
+    initscr(); //initializes ncurses
+    start_color(); //starts color
+    init_pair(1, COLOR_WHITE, COLOR_MAGENTA); // color pair definition, change later, testing
+    init_pair(2,COLOR_CYAN, COLOR_BLACK);
+    init_pair(3,COLOR_WHITE, COLOR_WHITE);
+    noecho(); //dont show user input
+    cbreak(); //all input types
+    curs_set(0); //gets rid of cursor
+
+    //initialize windows here
+    songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength^v, ylength<>, xpos^v, ypos<>);
+    currPlay = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
+    window3 = newwin((LINES/3),COLS/2, 2*(LINES/3), (COLS/4));
+    window4 = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
+>>>>>>> Reddd
     
     //Not sure if this VVV  is necessary, i'll test later
     keypad(songList, TRUE); //allows you to use keypad
@@ -56,6 +82,13 @@ void displayScreen()
 {
     //function call to read songs off of folder/playlist here
     //display text using mvwprintw([window], x, y
+<<<<<<< HEAD
+=======
+    mvwprintw(songList,2,10,"Song Queue");
+    mvwprintw(currPlay,2,10,"Currently Playing");
+    mvwprintw(window3,2,10,"Window 3");
+    mvwprintw(window4,2,10,"Window 4");
+>>>>>>> Reddd
         for(auto a : windows){
         if(a==*currWin){
             wattron(a,COLOR_PAIR(1));
@@ -79,7 +112,26 @@ void songListSelect(WINDOW *win)
     wbkgd(win,COLOR_PAIR(3));
     //another array/list for scrolling through songs? esc to exit?
     // some operation ...
+<<<<<<< HEAD
     wgetch(win);
+=======
+    while(getUserInp(*currWin)!=127)
+    {
+        switch (userInput)
+        {
+            case KEY_DOWN:
+                //move down in song list
+                // highlight current row
+                break;
+            case KEY_UP:
+                //move up in song list
+                // highlight current row
+                break;
+            case 'p':
+                startPlayer("/Users/rileywhite/TerminalStuff/sftwr380/nomp/songs/Rosalina_Observatory_2.mp3");   
+        }
+    }
+>>>>>>> Reddd
     wbkgd(win,COLOR_PAIR(0));
 }
 
@@ -103,7 +155,11 @@ void selectWindow()
         currWin++; //seg fault here, not sure why    <--this
         };
         break;
+<<<<<<< HEAD
     case KEY_DOWN:
+=======
+    case '\n': //enter pressed
+>>>>>>> Reddd
         songListSelect(*currWin);
         break;
     default:

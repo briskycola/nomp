@@ -30,7 +30,7 @@ MPVPlayer::~MPVPlayer()
 {
     if (!isPlaying)
     {
-        std::cerr << "Signal handled\n";
+        //std::cerr << "Signal handled\n";
     }
 
     if (mpvHandle)
@@ -61,13 +61,13 @@ bool MPVPlayer::play(const std::string &filename)
 
     // Keep playing until we reach EOF
     // or we CTRL+C.
-    std::cout << "Music player started successfully\n";
+    //std::cout << "Music player started successfully\n";
     while (isPlaying)
     {
         event = mpv_wait_event(mpvHandle, 0);
         if (event && event->event_id == MPV_EVENT_END_FILE)
         {
-            break;
+           break;
         }
     }
     return true;
