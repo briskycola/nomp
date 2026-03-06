@@ -1,5 +1,5 @@
 #include "MPVPlayer.hpp"
-#include "CbreakMode.hpp"
+#include "nctui.hpp"
 #include <iostream>
 #include <array>
 #include <csignal>
@@ -78,7 +78,7 @@ bool MPVPlayer::play(const std::string &filename)
     mpv_event *event;
 
     // TEMP: store char from STDIN
-    char ch;
+    //char ch;
 
     // Send the command to the mpv instance.
     if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
@@ -98,8 +98,8 @@ bool MPVPlayer::play(const std::string &filename)
            break;
         }
 
-        ch = getCharFromKeyboard();
-        if (ch == 'p') togglePause();
+        //homech = getCharFromKeyboard();
+        //if (ch == 'p') togglePause();
     }
     return true;
 }

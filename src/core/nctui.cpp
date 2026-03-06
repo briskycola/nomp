@@ -1,22 +1,20 @@
 //IMPORTANT
 //X and Y are "flipped" in terminal
 //X is up and down Y is left-right
-<<<<<<< HEAD
-
-=======
 #include "StartPlayer.hpp"
->>>>>>> Reddd
 #include "nctui.hpp"
+#include <cstdint>
 #include <iostream>
 #include <ncurses.h>
 #include <cstdlib>
-<<<<<<< HEAD
-=======
 #include <vector>
->>>>>>> Reddd
+#include <thread>
+#include "MPVPlayer.hpp"
 
 //Global Vars
 //Add more windows here for each tab/button/thing
+
+bool tesrunning = false;
 WINDOW *songList;
 WINDOW *currPlay;
 WINDOW *window3;
@@ -26,31 +24,24 @@ std::vector<WINDOW*> windows; //vector of windows for selecting current window
 std::vector<WINDOW*>::iterator currWin; //iterator for selecting current window from vector
 int userInput; //this being an int and not a char is weird I know
 
-//Ncurses initialization
+//Ncurses initializationi
+
+
+void testThread()
+{
+    startPlayer(2, "#/song path#/");
+}
+
+
+
 void init_curses()
 {
-<<<<<<< HEAD
+    //setlocale(LC_ALL, "");
     initscr(); //initializes ncurses
     start_color(); //starts color
-    init_pair(1, COLOR_BLUE, COLOR_RED); // color pair definition, change later, testing
-    init_pair(2,COLOR_GREEN, COLOR_BLACK);
-    init_pair(3,COLOR_WHITE, COLOR_WHITE);
-    noecho(); //dont show user input
-    curs_set(0); //gets rid of cursor
-
-    //initialize windows here
-    //positions have to be hard-coded
-    songList = newwin(30, 25, 1, 1); //newwin(xlength, ylength, xpos, ypos);
-    currPlay = newwin(25,50, 1, 30);
-    window3 = newwin(25,50, 1, 90);
-    window4 = newwin(15,20,1,150);
-=======
-    setlocale(LC_ALL, "");
-    initscr(); //initializes ncurses
-    start_color(); //starts color
-    init_pair(1, COLOR_WHITE, COLOR_MAGENTA); // color pair definition, change later, testing
+    init_pair(1, COLOR_YELLOW, COLOR_MAGENTA); // color pair definition, change later, testing
     init_pair(2,COLOR_CYAN, COLOR_BLACK);
-    init_pair(3,COLOR_WHITE, COLOR_WHITE);
+    init_pair(3,COLOR_YELLOW, COLOR_CYAN);
     noecho(); //dont show user input
     cbreak(); //all input types
     curs_set(0); //gets rid of cursor
@@ -60,7 +51,6 @@ void init_curses()
     currPlay = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
     window3 = newwin((LINES/3),COLS/2, 2*(LINES/3), (COLS/4));
     window4 = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
->>>>>>> Reddd
     
     //Not sure if this VVV  is necessary, i'll test later
     keypad(songList, TRUE); //allows you to use keypad
@@ -82,20 +72,17 @@ void displayScreen()
 {
     //function call to read songs off of folder/playlist here
     //display text using mvwprintw([window], x, y
-<<<<<<< HEAD
-=======
     mvwprintw(songList,2,10,"Song Queue");
     mvwprintw(currPlay,2,10,"Currently Playing");
     mvwprintw(window3,2,10,"Window 3");
     mvwprintw(window4,2,10,"Window 4");
->>>>>>> Reddd
+
         for(auto a : windows){
         if(a==*currWin){
             wattron(a,COLOR_PAIR(1));
             box(a,0,0);
             wattroff(a,COLOR_PAIR(1));
-			}else
-			{
+        }else{
         wattron(a,COLOR_PAIR(2));
         box(a,0,0);
         wattroff(a,COLOR_PAIR(2));
@@ -107,18 +94,16 @@ void displayScreen()
 //We can put a case for "ENTER" that selects the window and runs
 //another method specific to each window 
 
+
+
 void songListSelect(WINDOW *win)
-{
+{   
     wbkgd(win,COLOR_PAIR(3));
     //another array/list for scrolling through songs? esc to exit?
     // some operation ...
-<<<<<<< HEAD
-    wgetch(win);
-=======
     while(getUserInp(*currWin)!=127)
     {
-        switch (userInput)
-        {
+        switch (userInput) {
             case KEY_DOWN:
                 //move down in song list
                 // highlight current row
@@ -127,11 +112,19 @@ void songListSelect(WINDOW *win)
                 //move up in song list
                 // highlight current row
                 break;
-            case 'p':
-                startPlayer("/Users/rileywhite/TerminalStuff/sftwr380/nomp/songs/Rosalina_Observatory_2.mp3");   
-        }
+            case 'o':
+                if(!tesrunning)
+                {
+                tesrunning=true;
+                std::thread tes(testThread);
+                tes.detach();
+                }
+                break;
+            default:
+                wrefresh(*currWin);
+                break;
+            }
     }
->>>>>>> Reddd
     wbkgd(win,COLOR_PAIR(0));
 }
 
@@ -144,7 +137,8 @@ int getUserInp(WINDOW *win)
 void selectWindow()
 {
     userInput = getUserInp(*currWin);
-    switch (userInput){
+    switch (userInput)
+    {
     case KEY_LEFT:
         if(currWin!=windows.begin()){
             currWin--;
@@ -152,15 +146,15 @@ void selectWindow()
         break;
     case KEY_RIGHT:
         if(currWin!=windows.end()-1){ //adding a -1 fixed      not sure why 
-        currWin++; //seg fault here, not sure why    <--this
+        currWin++;
         };
         break;
-<<<<<<< HEAD
-    case KEY_DOWN:
-=======
     case '\n': //enter pressed
->>>>>>> Reddd
         songListSelect(*currWin);
+        break;
+    case 'p':
+        std::cout<<"This would've paused it normally"<<std::endl;
+        //togglePause(); //issue with file linking here, can't find the function for some reason
         break;
     default:
         break;
