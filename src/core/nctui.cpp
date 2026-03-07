@@ -29,7 +29,7 @@ int userInput; //this being an int and not a char is weird I know
 
 void testThread()
 {
-    startPlayer(2, "#/song path#/");
+    startPlayer(2, ""); //hardcode path to song
 }
 
 
@@ -52,7 +52,8 @@ void init_curses()
     window3 = newwin((LINES/3),COLS/2, 2*(LINES/3), (COLS/4));
     window4 = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
     
-    //Not sure if this VVV  is necessary, i'll test later
+    //Not sure if this VVV  is necessary, i'll test lateri
+    keypad(stdscr, TRUE); //allows keypad
     keypad(songList, TRUE); //allows you to use keypad
     keypad(currPlay, TRUE); //allows you to use keypad
     keypad(window3, TRUE); //allows you to use keypad
@@ -101,28 +102,34 @@ void songListSelect(WINDOW *win)
     wbkgd(win,COLOR_PAIR(3));
     //another array/list for scrolling through songs? esc to exit?
     // some operation ...
-    while(getUserInp(*currWin)!=127)
+    switch(getUserInp(*currWin))
     {
-        switch (userInput) {
-            case KEY_DOWN:
-                //move down in song list
-                // highlight current row
-                break;
-            case KEY_UP:
-                //move up in song list
-                // highlight current row
-                break;
-            case 'o':
-                if(!tesrunning)
-                {
-                tesrunning=true;
-                std::thread tes(testThread);
-                tes.detach();
-                }
-                break;
-            default:
-                wrefresh(*currWin);
-                break;
+        case 127:
+        case KEY_BACKSPACE:
+        case '\b':
+            break;
+        default:
+            switch (userInput)
+            {
+                case KEY_DOWN:
+                    //move down in song list
+                    // highlight current row
+                    break;
+                case KEY_UP:
+                    //move up in song list
+                    // highlight current row
+                    break;
+                case 'o':
+                    if(!tesrunning)
+                    {
+                    tesrunning=true;
+                    std::thread tes(testThread);
+                    tes.detach();
+                    }
+                    break;
+                default:
+                    wrefresh(*currWin);
+                    break;
             }
     }
     wbkgd(win,COLOR_PAIR(0));
@@ -154,7 +161,7 @@ void selectWindow()
         break;
     case 'p':
         std::cout<<"This would've paused it normally"<<std::endl;
-        //togglePause(); //issue with file linking here, can't find the function for some reason
+        //MPVPlayer::togglePause();
         break;
     default:
         break;
