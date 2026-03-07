@@ -1,3 +1,4 @@
+#if defined(__linux__) || defined(__APPLE__)
 #include "CbreakMode.hpp"
 #include <iostream>
 #include <unistd.h>
@@ -70,3 +71,4 @@ char getCharFromKeyboard()
     }
     return '\0';
 }
+#endif
