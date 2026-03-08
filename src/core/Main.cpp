@@ -15,15 +15,20 @@ int main(int argc, char **argv)
     signal(SIGINT, handleSignal);
     signal(SIGTERM, handleSignal);
 
+#if defined(__linux__) || defined(__APPLE__)
     termios original;
 
     // Enable Cbreak mode.
     enableCbreakMode(original);
+#endif
 
     // Start the music player.
     startPlayer(argc, argv);
 
+#if defined(__linux__) || defined(__APPLE__)
     // Disable Cbreak mode.
     disableCbreakMode(original);
+#endif
+
     return 0;
 }

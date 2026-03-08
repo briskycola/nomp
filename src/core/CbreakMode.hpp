@@ -6,8 +6,12 @@
 // and testing the core. It won't be in
 // the final build.
 
+#if defined(__linux__) || defined(__APPLE__)
 #include <termios.h>
+
+#define CBREAKMODE_H
 
 bool enableCbreakMode(termios &original);
 bool disableCbreakMode(termios &original);
 char getCharFromKeyboard();
+#endif
