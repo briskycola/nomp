@@ -22,19 +22,24 @@ int main(int argc, char **argv)
     init_curses();
     std::thread dis(display);
 
+#if defined(__linux__) || defined(__APPLE__)
     termios original;
 
     // Enable Cbreak mode.
     enableCbreakMode(original);
+#endif
 
     // Start the music player.
     startPlayer(argc, argv);
 
+#if defined(__linux__) || defined(__APPLE__)
     // Disable Cbreak mode.
     disableCbreakMode(original);
     
     dis.join();
 
     endwin();
+#endif
+
     return 0;
 }
