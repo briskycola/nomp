@@ -29,7 +29,7 @@ int userInput; //this being an int and not a char is weird I know
 
 void testThread()
 {
-    startPlayer(2, ""); //hardcode path to song
+    startPlayer(2, "/Users/rileywhite/TerminalStuff/sftwr380/nomp/songs/Rosalina_Observatory_2.mp3"); //hardcode path to song, first arg: 2 = music file, 3 = midi
 }
 
 
@@ -41,7 +41,7 @@ void init_curses()
     start_color(); //starts color
     init_pair(1, COLOR_YELLOW, COLOR_MAGENTA); // color pair definition, change later, testing
     init_pair(2,COLOR_CYAN, COLOR_BLACK);
-    init_pair(3,COLOR_YELLOW, COLOR_CYAN);
+    init_pair(3,COLOR_MAGENTA, COLOR_WHITE);
     noecho(); //dont show user input
     cbreak(); //all input types
     curs_set(0); //gets rid of cursor
@@ -52,14 +52,12 @@ void init_curses()
     window3 = newwin((LINES/3),COLS/2, 2*(LINES/3), (COLS/4));
     window4 = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
     
-    //Not sure if this VVV  is necessary, i'll test lateri
     keypad(stdscr, TRUE); //allows keypad
-    keypad(songList, TRUE); //allows you to use keypad
-    keypad(currPlay, TRUE); //allows you to use keypad
-    keypad(window3, TRUE); //allows you to use keypad
-    keypad(window4, TRUE); //allows you to use keypad
+    keypad(currPlay, TRUE);
+    keypad(songList, TRUE);
+    keypad(window3, TRUE);
+    keypad(window4, TRUE);
 
-    //I know this is ugly, it's the only way it works, trust
 
     windows.push_back(songList);
     windows.push_back(currPlay);
@@ -98,39 +96,33 @@ void displayScreen()
 
 
 void songListSelect(WINDOW *win)
-{   
+{
     wbkgd(win,COLOR_PAIR(3));
-    //another array/list for scrolling through songs? esc to exit?
-    // some operation ...
-    switch(getUserInp(*currWin))
+    while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
     {
-        case 127:
-        case KEY_BACKSPACE:
-        case '\b':
-            break;
-        default:
-            switch (userInput)
-            {
-                case KEY_DOWN:
-                    //move down in song list
-                    // highlight current row
-                    break;
-                case KEY_UP:
-                    //move up in song list
-                    // highlight current row
-                    break;
-                case 'o':
-                    if(!tesrunning)
-                    {
-                    tesrunning=true;
-                    std::thread tes(testThread);
-                    tes.detach();
-                    }
-                    break;
-                default:
-                    wrefresh(*currWin);
-                    break;
-            }
+        switch (getUserInp(*currWin))
+        {
+            case KEY_DOWN:
+                //move down in song list
+                // highlight current row
+                continue;
+            case KEY_UP:
+                //move up in song list
+                // highlight current row
+                continue;
+            case 'o':
+                if(!tesrunning)
+                {
+                tesrunning=true;
+                std::thread tes(testThread);
+                tes.detach();
+                }
+                break;
+            default:
+                wrefresh(*currWin);
+                break;
+        }
+        break;
     }
     wbkgd(win,COLOR_PAIR(0));
 }
@@ -147,22 +139,28 @@ void selectWindow()
     switch (userInput)
     {
     case KEY_LEFT:
-        if(currWin!=windows.begin()){
+        if(currWin!=windows.begin())
+        {
             currWin--;
         };
         break;
+        
     case KEY_RIGHT:
-        if(currWin!=windows.end()-1){ //adding a -1 fixed      not sure why 
+        if(currWin!=windows.end()-1)
+        {
         currWin++;
         };
         break;
+        
     case '\n': //enter pressed
         songListSelect(*currWin);
         break;
+        
     case 'p':
         std::cout<<"This would've paused it normally"<<std::endl;
         //MPVPlayer::togglePause();
         break;
+        
     default:
         break;
     }
