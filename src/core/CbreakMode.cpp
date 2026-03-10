@@ -62,7 +62,7 @@ char getCharFromKeyboard()
     keyboard.fd = STDIN_FILENO;
     keyboard.events = POLLIN;
 
-    if (poll(&keyboard, 1, -1) > 0 && keyboard.revents & (POLLIN | POLLHUP))
+    if (poll(&keyboard, 1, 0) > 0 && keyboard.revents & (POLLIN | POLLHUP))
     {
         if (read(STDIN_FILENO, &ch, sizeof(ch)) == 1)
         {
