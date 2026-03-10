@@ -1,4 +1,9 @@
 #include "MPVPlayer.hpp"
+
+#if defined(__linux__) || defined(__APPLE__)
+#include "CbreakMode.hpp"
+#endif
+
 #include <iostream>
 #include <array>
 #include <csignal>
@@ -40,6 +45,30 @@ MPVPlayer::~MPVPlayer()
     mpvHandle = nullptr;
 }
 
+bool MPVPlayer::togglePause()
+{
+    // Check if we can get pause data
+    // from mpv in the first place.
+    if (mpv_get_property(mpvHandle, "pause", MPV_FORMAT_FLAG, &isPaused) < 0)
+    {
+        std::cerr << "Could not get pause data from mpv\n";
+        return false;
+    }
+
+    // Determine whether the player is
+    // paused or not.
+    if (isPaused == 0) isPaused = 1;
+    else isPaused = 0;
+
+    // Pause/Resume the player itself.
+    if (mpv_set_property(mpvHandle, "pause", MPV_FORMAT_FLAG, &isPaused) < 0)
+    {
+        std::cerr << "Could not pause/resume mpv instance\n";
+        return false;
+    }
+    return true;
+}
+
 bool MPVPlayer::play(const std::string &filename)
 {
     // This array represents the command sent
@@ -69,6 +98,11 @@ bool MPVPlayer::play(const std::string &filename)
         {
             break;
         }
+
+#ifdef CBREAKMODE_H
+        char ch = getCharFromKeyboard();
+        if (ch == 'p') togglePause();
+#endif
     }
     return true;
 }

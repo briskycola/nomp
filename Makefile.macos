@@ -3,11 +3,14 @@ CXX := clang++
 CXXFLAGS := -std=c++14 -Wall -Werror
 PKG_CONFIG := pkg-config
 
-MPV_CFLAGS := $(shell $(PKG_CONFIG) --cflags mpv)
+MPV_CXXFLAGS := $(shell $(PKG_CONFIG) --cflags mpv)
 MPV_LIBS := $(shell $(PKG_CONFIG) --libs mpv)
 
-NCURSES_CFLAGS := $(shell $(PKG_CONFIG) --cflags ncurses)
+NCURSES_CXXFLAGS := $(shell $(PKG_CONFIG) --cflags ncurses)
 NCURSES_LIBS := $(shell $(PKG_CONFIG) --libs ncurses)
+
+FLUIDSYNTH_CXXFLAGS := $(shell $(PKG_CONFIG) --cflags fluidsynth)
+FLUIDSYNTH_LIBS := $(shell $(PKG_CONFIG) --libs fluidsynth)
 
 SRC_DIR := src
 OBJ_DIR := obj
@@ -24,12 +27,12 @@ all: $(TARGET)
 
 # link
 $(TARGET): $(OBJS)
-	$(CXX) $(OBJS) -o $@ $(MPV_LIBS) $(NCURSES_LIBS)
+	$(CXX) $(OBJS) -o $@ $(MPV_LIBS) $(NCURSES_LIBS) $(FLUIDSYNTH_LIBS)
 
 # compile .cpp files into .o files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(MPV_CFLAGS) $(NCURSES_CFLAGS) -c $< -o $@ 
+	$(CXX) $(CXXFLAGS) $(MPV_CXXFLAGS) $(NCURSES_CXXFLAGS) $(FLUIDSYNTH_CXXFLAGS) -c $< -o $@
 
 # If running with clean argument,
 # clean up object files and binary.

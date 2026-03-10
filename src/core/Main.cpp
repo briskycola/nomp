@@ -1,7 +1,6 @@
-#include "MPVPlayer.hpp"
-#include <iostream>
+#include "StartPlayer.hpp"
+#include "CbreakMode.hpp"
 #include <csignal>
-#include <memory>
 
 volatile sig_atomic_t isPlaying = true;
 
@@ -16,18 +15,20 @@ int main(int argc, char **argv)
     signal(SIGINT, handleSignal);
     signal(SIGTERM, handleSignal);
 
-    // Check if the user entered the
-    // audio file name as an argument.
-    if (argc < 2)
-    {
-        std::cerr << "Usage: " << argv[0] << " <audio-file>\n";
-        return 1;
-    }
+#if defined(__linux__) || defined(__APPLE__)
+    termios original;
 
-    // Create the mpv instance and
-    // play the audio file.
-    const std::string filename = argv[1];
-    std::unique_ptr<MPVPlayer> player = std::make_unique<MPVPlayer>();
-    player->play(filename);
+    // Enable Cbreak mode.
+    enableCbreakMode(original);
+#endif
+
+    // Start the music player.
+    startPlayer(argc, argv);
+
+#if defined(__linux__) || defined(__APPLE__)
+    // Disable Cbreak mode.
+    disableCbreakMode(original);
+#endif
+
     return 0;
 }
