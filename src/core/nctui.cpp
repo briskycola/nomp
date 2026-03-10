@@ -14,7 +14,7 @@
 //Global Vars
 //Add more windows here for each tab/button/thing
 
-bool tesrunning = false;
+bool tesRunning = false;
 WINDOW *songList;
 WINDOW *currPlay;
 WINDOW *window3;
@@ -76,16 +76,20 @@ void displayScreen()
     mvwprintw(window3,2,10,"Window 3");
     mvwprintw(window4,2,10,"Window 4");
 
-        for(auto a : windows){
-        if(a==*currWin){
+        for(auto a : windows)
+        {
+        if(a==*currWin)
+        {
             wattron(a,COLOR_PAIR(1));
             box(a,0,0);
             wattroff(a,COLOR_PAIR(1));
-        }else{
+        }
+        else
+        {
         wattron(a,COLOR_PAIR(2));
         box(a,0,0);
         wattroff(a,COLOR_PAIR(2));
-			}
+        }
         wrefresh(a);
 		}
 }
@@ -111,11 +115,11 @@ void songListSelect(WINDOW *win)
                 // highlight current row
                 continue;
             case 'o':
-                if(!tesrunning)
+                if(!tesRunning)
                 {
-                tesrunning=true;
-                std::thread tes(testThread);
-                tes.detach();
+                    tesRunning=true;
+                    std::thread tes(testThread);
+                    tes.detach();
                 }
                 break;
             default:
