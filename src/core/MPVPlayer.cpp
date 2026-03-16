@@ -33,15 +33,10 @@ MPVPlayer::MPVPlayer()
 
 MPVPlayer::~MPVPlayer()
 {
-    if (!isPlaying)
-    {
-        std::cerr << "Signal handled\n";
-    }
+    if (!isPlaying) std::cerr << "Exiting (Quit)\n";
+    else std::cerr << "Exiting (EOF)\n";
 
-    if (mpvHandle)
-    {
-        mpv_terminate_destroy(mpvHandle);
-    }
+    if (mpvHandle) mpv_terminate_destroy(mpvHandle);
     mpvHandle = nullptr;
 }
 
@@ -69,6 +64,17 @@ bool MPVPlayer::togglePause()
     return true;
 }
 
+bool MPVPlayer::seek(const std::string time)
+{
+    std::array<const char*, 4> mpvCommandSeek = {"seek", time.c_str(), "relative", nullptr};
+    if (mpv_command(mpvHandle, mpvCommandSeek.data()) < 0)
+    {
+        std::cerr << "Failed to seek mpv player\n";
+        return false;
+    }
+    return true;
+}
+
 bool MPVPlayer::play(const std::string &filename)
 {
     // This array represents the command sent
@@ -76,13 +82,13 @@ bool MPVPlayer::play(const std::string &filename)
     //
     // In this case, we are going to load an
     // audio file and specify the file name.
-    std::array<const char*, 3> mpvCommand = {"loadfile", filename.c_str(), nullptr};
+    std::array<const char*, 3> mpvCommandLoadfile = {"loadfile", filename.c_str(), nullptr};
 
     // Used to store mpv events (EOF, interrupt, etc).
     mpv_event *event;
 
     // Send the command to the mpv instance.
-    if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
+    if (mpv_command(mpvHandle, mpvCommandLoadfile.data()) < 0)
     {
         std::cerr << "Failed to load audio file\n";
         return false;
@@ -94,14 +100,17 @@ bool MPVPlayer::play(const std::string &filename)
     while (isPlaying)
     {
         event = mpv_wait_event(mpvHandle, 0);
-        if (event && event->event_id == MPV_EVENT_END_FILE)
-        {
-            break;
-        }
+        if (event && event->event_id == MPV_EVENT_END_FILE) break;
 
 #ifdef CBREAKMODE_H
         char ch = getCharFromKeyboard();
-        if (ch == 'p') togglePause();
+        switch (ch)
+        {
+            case 'p': togglePause(); break;
+            case 'l': seek("5"); break;
+            case 'h': seek("-5"); break;
+            case 'q': isPlaying = false; break;
+        }
 #endif
     }
     return true;
