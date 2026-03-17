@@ -29,5 +29,5 @@ class FluidSynthPlayer
         FluidSynthPlayer();
         ~FluidSynthPlayer();
         bool play(const std::string &midiFile, const std::string &soundfontFile);
-        bool togglePause(const std::string &midiFile);
+        bool togglePause();
 };
