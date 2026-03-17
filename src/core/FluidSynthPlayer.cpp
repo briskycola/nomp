@@ -38,15 +38,8 @@ FluidSynthPlayer::~FluidSynthPlayer()
     delete_fluid_settings(settings);
 }
 
-bool FluidSynthPlayer::togglePause(const std::string &midiFile)
+bool FluidSynthPlayer::togglePause()
 {
-    // Check to see if player is not playing anything in the first place.
-    // if (fluid_player_get_status(player) != FLUID_PLAYER_PLAYING)
-    // {
-    //     std::cerr << "Player is not currently playing\n";
-    //     return false;
-    // }
-
     // Pause music.
     if (!isPaused)
     {
@@ -106,7 +99,7 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
 
 
     char ch = getCharFromKeyboard();
-    if (ch == 'p') togglePause(midiFile);
+    if (ch == 'p') togglePause();
 
 
     }
