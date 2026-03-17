@@ -1,4 +1,5 @@
 #include "FluidSynthPlayer.hpp"
+#include "CbreakMode.hpp"
 #include <iostream>
 #include <csignal>
 
@@ -37,6 +38,23 @@ FluidSynthPlayer::~FluidSynthPlayer()
     delete_fluid_settings(settings);
 }
 
+bool FluidSynthPlayer::togglePause()
+{
+    // Pause music.
+    if (!isPaused)
+    {
+        fluid_player_stop(player);
+        isPaused = true;
+    }
+    else
+    {
+        fluid_player_play(player);
+        isPaused = false;
+    }
+
+    return true;
+}
+
 bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soundfontFile)
 {
     // Check if the user entered a valid
@@ -67,14 +85,23 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
         return false;
     }
 
+    // Indicate that the player is not paused
+    isPaused = false;
+
     // Keep playing until we reach EOF
     // or we CTRL+C
     while (isPlaying)
     {
-        if (fluid_player_get_status(player) == FLUID_PLAYER_DONE)
+        if (!isPlaying && fluid_player_get_status(player) == FLUID_PLAYER_DONE)
         {
             break;
         }
+
+
+    char ch = getCharFromKeyboard();
+    if (ch == 'p') togglePause();
+
+
     }
 
     // Stop immediately if we CTRL+C
