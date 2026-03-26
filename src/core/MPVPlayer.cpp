@@ -1,13 +1,10 @@
 #include "MPVPlayer.hpp"
-<<<<<<< HEAD
 #include "nctui.hpp"
-=======
 
 #if defined(__linux__) || defined(__APPLE__)
 #include "CbreakMode.hpp"
 #endif
 
->>>>>>> main
 #include <iostream>
 #include <array>
 #include <csignal>
@@ -85,12 +82,6 @@ bool MPVPlayer::play(const std::string &filename)
     // Used to store mpv events (EOF, interrupt, etc).
     mpv_event *event;
 
-<<<<<<< HEAD
-    // TEMP: store char from STDIN
-    //char ch;
-
-=======
->>>>>>> main
     // Send the command to the mpv instance.
     if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
     {
@@ -109,15 +100,10 @@ bool MPVPlayer::play(const std::string &filename)
            break;
         }
 
-<<<<<<< HEAD
-        //homech = getCharFromKeyboard();
-        //if (ch == 'p') togglePause();
-=======
 #ifdef CBREAKMODE_H
         char ch = getCharFromKeyboard();
         if (ch == 'p') togglePause();
 #endif
->>>>>>> main
     }
     return true;
 }

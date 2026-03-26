@@ -1,10 +1,8 @@
 #include "nctui.hpp"
-<<<<<<< HEAD
-=======
 #include <thread>
->>>>>>> main
 #include "StartPlayer.hpp"
 #include <csignal>
+#include "CbreakMode.hpp"
 
 volatile sig_atomic_t isPlaying = true;
 
@@ -12,10 +10,6 @@ void handleSignal(int signal)
 {
     isPlaying = false;
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> main
 void display(){
     while(isPlaying){
         displayScreen();
@@ -25,19 +19,10 @@ void display(){
 
 int main(int argc, char **argv)
 {
-<<<<<<< HEAD
     signal(SIGINT, handleSignal);
     signal(SIGTERM, handleSignal);
     
     init_curses(); 
-
-    // Enable Cbreak mode.
-
-    std::thread dis(display);
-    
-    // Disable Cbreak mode.
-=======
-    init_curses();
     std::thread dis(display);
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -48,20 +33,16 @@ int main(int argc, char **argv)
 #endif
 
     // Start the music player.
-    startPlayer(argc, argv);
+    // startPlayer(argc, argv);
 
 #if defined(__linux__) || defined(__APPLE__)
     // Disable Cbreak mode.
     disableCbreakMode(original);
     
->>>>>>> main
     dis.join();
 
     endwin();
-<<<<<<< HEAD
-=======
 #endif
 
->>>>>>> main
     return 0;
 }
