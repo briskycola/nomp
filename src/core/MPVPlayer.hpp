@@ -1,3 +1,4 @@
+#pragma once
 #include <mpv/client.h>
 #include <string>
 
