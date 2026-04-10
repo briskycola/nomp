@@ -22,4 +22,5 @@ class MPVPlayer
         ~MPVPlayer();
         bool play(const std::string &filename);
         bool togglePause();
+        MPVPlayer* playerptr;
 };

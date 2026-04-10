@@ -1,12 +1,11 @@
 #include "StartPlayer.hpp"
-#include "MPVPlayer.hpp"
 #include "FluidSynthPlayer.hpp"
 #include <iostream>
 #include <string>
 #include <cstdlib>
 #include <memory>
 
-bool startPlayer(int argc, const std::string &filename)
+MPVPlayer &startPlayer(int argc, const std::string &filename)
 {
     // Check if the user entered the audio file
     // or MIDI + SoundFont as an argument
@@ -40,5 +39,6 @@ bool startPlayer(int argc, const std::string &filename)
 //    return true;
     std::unique_ptr<MPVPlayer> player = std::make_unique<MPVPlayer>();
     player->play(filename);
-    return true;
+    MPVPlayer& playerptr = *player;
+    return playerptr;
 }

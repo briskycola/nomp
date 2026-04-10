@@ -1,19 +1,24 @@
-#include "nctui.hpp"
+#include <iostream>
 #include <thread>
 #include "StartPlayer.hpp"
 #include <csignal>
 #include "CbreakMode.hpp"
+#include "nctui.hpp"
+#include <cstdlib>
 
 volatile sig_atomic_t isPlaying = true;
+
+NompTUI NTUI;
 
 void handleSignal(int signal)
 {
     isPlaying = false;
 }
+
 void display(){
-    while(isPlaying){
-        displayScreen();
-        selectWindow();
+    while(NTUI.userInput!='1'){
+        NTUI.displayScreen();
+        NTUI.selectWindow();
     }
 }
 
@@ -22,8 +27,7 @@ int main(int argc, char **argv)
     signal(SIGINT, handleSignal);
     signal(SIGTERM, handleSignal);
     
-    init_curses(); 
-    std::thread dis(display);
+    NTUI.init_curses(); 
 
 #if defined(__linux__) || defined(__APPLE__)
     termios original;
@@ -35,14 +39,16 @@ int main(int argc, char **argv)
     // Start the music player.
     // startPlayer(argc, argv);
 
+    display();    
+
 #if defined(__linux__) || defined(__APPLE__)
     // Disable Cbreak mode.
     disableCbreakMode(original);
     
-    dis.join();
-
-    endwin();
+    
 #endif
 
+   // dis.join();
+    endwin();
     return 0;
 }

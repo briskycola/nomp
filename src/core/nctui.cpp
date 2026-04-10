@@ -9,33 +9,20 @@
 #include <cstdlib>
 #include <vector>
 #include <thread>
-#include "MPVPlayer.hpp"
 
 //Global Vars
 //Add more windows here for each tab/button/thing
 
-bool tesRunning = false;
-WINDOW *songList;
-WINDOW *currPlay;
-WINDOW *window3;
-WINDOW *window4;
-
-std::vector<WINDOW*> windows; //vector of windows for selecting current window
-std::vector<WINDOW*>::iterator currWin; //iterator for selecting current window from vector
-int userInput; //this being an int and not a char is weird I know
-
-//Ncurses initializationi
-
+MPVPlayer* playerptr;
 
 void testThread()
 {
-    startPlayer(2, "/Users/rileywhite/TerminalStuff/sftwr380/nomp/songs/Rosalina_Observatory_2.mp3"); //hardcode path to song, first arg: 2 = music file, 3 = midi
+    playerptr = &startPlayer(2, "/Users/rileywhite/TerminalStuff/sftwr380/nomp/songs/Rosalina_Observatory_2.mp3"); //hardcode path to song, first arg: 2 = music file, 3 = midi
 }
 
-
-
-void init_curses()
+void NompTUI::init_curses()
 {
+    
     //setlocale(LC_ALL, "");
     initscr(); //initializes ncurses
     start_color(); //starts color
@@ -47,7 +34,7 @@ void init_curses()
     curs_set(0); //gets rid of cursor
 
     //initialize windows here
-    songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength^v, ylength<>, xpos^v, ypos<>);
+    songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength (up down), ylength (left right), xpos, ypos<>);
     currPlay = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
     window3 = newwin((LINES/3),COLS/2, 2*(LINES/3), (COLS/4));
     window4 = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
@@ -67,7 +54,7 @@ void init_curses()
     currWin = windows.begin(); //iterator at start of vector
 }
 
-void displayScreen()
+void NompTUI::displayScreen()
 {
     //function call to read songs off of folder/playlist here
     //display text using mvwprintw([window], x, y
@@ -97,14 +84,12 @@ void displayScreen()
 //We can put a case for "ENTER" that selects the window and runs
 //another method specific to each window 
 
-
-
-void songListSelect(WINDOW *win)
+void NompTUI::songListSelect(WINDOW *win)
 {
     wbkgd(win,COLOR_PAIR(3));
     while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
     {
-        switch (getUserInp(*currWin))
+        switch (getUserInput(*currWin))
         {
             case KEY_DOWN:
                 //move down in song list
@@ -114,6 +99,8 @@ void songListSelect(WINDOW *win)
                 //move up in song list
                 // highlight current row
                 continue;
+            //case '\n':
+            //case KEY_ENTER:
             case 'o':
                 if(!tesRunning)
                 {
@@ -131,15 +118,15 @@ void songListSelect(WINDOW *win)
     wbkgd(win,COLOR_PAIR(0));
 }
 
-int getUserInp(WINDOW *win)
+int NompTUI::getUserInput(WINDOW *win)
 {
-    userInput =  wgetch(win);
+    userInput = wgetch(win);
     return userInput;
 }
 
-void selectWindow()
+void NompTUI::selectWindow()
 {
-    userInput = getUserInp(*currWin);
+    userInput = getUserInput(*currWin);
     switch (userInput)
     {
     case KEY_LEFT:
@@ -148,8 +135,8 @@ void selectWindow()
             currWin--;
         };
         break;
-        
-    case KEY_RIGHT:
+
+        case KEY_RIGHT:
         if(currWin!=windows.end()-1)
         {
         currWin++;
@@ -161,8 +148,7 @@ void selectWindow()
         break;
         
     case 'p':
-        std::cout<<"This would've paused it normally"<<std::endl;
-        //MPVPlayer::togglePause();
+        playerptr->togglePause();
         break;
         
     default:

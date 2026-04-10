@@ -101,8 +101,8 @@ bool MPVPlayer::play(const std::string &filename)
         }
 
 #ifdef CBREAKMODE_H
-        char ch = getCharFromKeyboard();
-        if (ch == 'p') togglePause();
+       // char ch = getCharFromKeyboard();
+        //if (ch == 'p') togglePause();
 #endif
     }
     return true;

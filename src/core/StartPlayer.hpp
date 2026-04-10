@@ -1,3 +1,4 @@
 #include <string>
+#include "MPVPlayer.hpp"
 
-bool startPlayer(int argc,const std::string &filename);
+MPVPlayer &startPlayer(int argc,const std::string &filename);
