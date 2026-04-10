@@ -1,15 +1,16 @@
 #include "FluidSynthPlayer.hpp"
-#include "CbreakMode.hpp"
+#include <fluidsynth/synth.h>
 #include <iostream>
-#include <csignal>
-
-extern volatile sig_atomic_t isPlaying;
 
 FluidSynthPlayer::FluidSynthPlayer()
 {
     settings = new_fluid_settings();
     synth = new_fluid_synth(settings);
     player = new_fluid_player(synth);
+
+    audioDriver = nullptr;
+    sfid = 0;
+    isPaused = false;
 
     // Disable all logging from FluidSynth
     fluid_set_log_function(FLUID_PANIC, NULL, NULL);
@@ -25,17 +26,31 @@ FluidSynthPlayer::FluidSynthPlayer()
 
 FluidSynthPlayer::~FluidSynthPlayer()
 {
-    if (!isPlaying)
+    if (player)
     {
-        std::cerr << "Signal handled\n";
+        fluid_player_stop(player);
+        fluid_player_join(player);
+        delete_fluid_player(player);
+        player = nullptr;
     }
 
-    // Remove all FluidSynth elements
-    // from the heap.
-    delete_fluid_audio_driver(audioDriver);
-    delete_fluid_player(player);
-    delete_fluid_synth(synth);
-    delete_fluid_settings(settings);
+    if (audioDriver != nullptr)
+    {
+        delete_fluid_audio_driver(audioDriver);
+        audioDriver = nullptr;
+    }
+
+    if (synth)
+    {
+        delete_fluid_synth(synth);
+        synth = nullptr;
+    }
+
+    if (settings)
+    {
+        delete_fluid_settings(settings);
+        settings = nullptr;
+    }
 }
 
 bool FluidSynthPlayer::togglePause()
@@ -71,43 +86,35 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
         return false;
     }
 
+    if (player)
+    {
+        fluid_player_stop(player);
+        fluid_player_join(player);
+        delete_fluid_player(player);
+        player = new_fluid_player(synth);
+    }
+
+    if (sfid != 0)
+    {
+        fluid_synth_sfunload(synth, sfid, 1);
+        sfid = 0;
+    }
+    
     // Load SoundFont and MIDI file
-    fluid_synth_sfload(synth, soundfontFile.c_str(), 1);
+    sfid = fluid_synth_sfload(synth, soundfontFile.c_str(), 1);
     fluid_player_add(player, midiFile.c_str());
 
     // Start the synthesizer.
-    audioDriver = new_fluid_audio_driver(settings, synth);
+    if (!audioDriver)
+    {
+        audioDriver = new_fluid_audio_driver(settings, synth);
+    }
 
     // Play the MIDI file.
     if (fluid_player_play(player) != FLUID_OK)
     {
         std::cerr << "Could not start MIDI playback\n";
         return false;
-    }
-
-    // Indicate that the player is not paused
-    isPaused = false;
-
-    // Keep playing until we reach EOF
-    // or we CTRL+C
-    while (isPlaying)
-    {
-        if (!isPlaying && fluid_player_get_status(player) == FLUID_PLAYER_DONE)
-        {
-            break;
-        }
-
-
-    char ch = getCharFromKeyboard();
-    if (ch == 'p') togglePause();
-
-
-    }
-
-    // Stop immediately if we CTRL+C
-    if (!isPlaying)
-    {
-        fluid_player_stop(player);
     }
 
     return true;

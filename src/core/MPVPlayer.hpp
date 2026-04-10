@@ -1,3 +1,4 @@
+#pragma once
 #include <mpv/client.h>
 #include <string>
 
@@ -22,4 +23,5 @@ class MPVPlayer
         ~MPVPlayer();
         bool play(const std::string &filename);
         bool togglePause();
+        bool seek(const std::string time);
 };
