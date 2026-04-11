@@ -81,5 +81,6 @@ bool MPVPlayer::play(const std::string &filename)
         std::cerr << "Failed to load audio file\n";
         return false;
     }
+    
     return true;
 }
