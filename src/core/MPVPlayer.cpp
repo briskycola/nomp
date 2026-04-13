@@ -1,14 +1,6 @@
 #include "MPVPlayer.hpp"
-
-#if defined(__linux__) || defined(__APPLE__)
-// The ncurses TUI reads keyboard input; the player must not compete for stdin.
-#endif
-
 #include <iostream>
 #include <array>
-#include <csignal>
-
-extern volatile sig_atomic_t isPlaying;
 
 MPVPlayer::MPVPlayer()
 {
@@ -26,18 +18,12 @@ MPVPlayer::MPVPlayer()
     }
 
     // Custom options for mpv instance.
-
     // Disable video features
     mpv_set_property_string(mpvHandle, "vo", "none");
 }
 
 MPVPlayer::~MPVPlayer()
 {
-    if (!isPlaying)
-    {
-        std::cerr << "Signal handled\n";
-    }
-
     if (mpvHandle)
     {
         mpv_terminate_destroy(mpvHandle);
@@ -69,6 +55,17 @@ bool MPVPlayer::togglePause()
     return true;
 }
 
+bool MPVPlayer::seek(const std::string time)
+{
+    std::array<const char*, 4> mpvCommandSeek = {"seek", time.c_str(), "relative", nullptr};
+    if (mpv_command(mpvHandle, mpvCommandSeek.data()) < 0)
+    {
+        std::cerr << "Failed to seek mpv player\n";
+        return false;
+    }
+    return true;
+}
+
 bool MPVPlayer::play(const std::string &filename)
 {
     // This array represents the command sent
@@ -78,26 +75,12 @@ bool MPVPlayer::play(const std::string &filename)
     // audio file and specify the file name.
     std::array<const char*, 3> mpvCommand = {"loadfile", filename.c_str(), nullptr};
 
-    // Used to store mpv events (EOF, interrupt, etc).
-    mpv_event *event;
-
     // Send the command to the mpv instance.
     if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
     {
         std::cerr << "Failed to load audio file\n";
         return false;
     }
-
-    // Keep playing until we reach EOF
-    // or we CTRL+C.
-    std::cout << "Music player started successfully\n";
-    while (isPlaying)
-    {
-        event = mpv_wait_event(mpvHandle, 0);
-        if (event && event->event_id == MPV_EVENT_END_FILE)
-        {
-            break;
-        }
-    }
+    
     return true;
 }
