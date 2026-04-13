@@ -1,80 +1,112 @@
 //IMPORTANT
 //X and Y are "flipped" in terminal
 //X is up and down Y is left-right
-
+//#include "StartPlayer.hpp"
 #include "nctui.hpp"
 #include <ncurses.h>
+#include <vector>
 
 void NompTUI::initCurses()
 {
-    initscr(); // initializes ncurses
-    start_color(); // starts color
-    init_pair(1, COLOR_BLUE, COLOR_RED); // color pair definition, change later, testing
-    init_pair(2, COLOR_GREEN, COLOR_BLACK);
-    init_pair(3, COLOR_WHITE, COLOR_WHITE);
-    noecho(); // dont show user input
-    curs_set(0); // gets rid of cursor
+    
+    //setlocale(LC_ALL, "");
+    initscr(); //initializes ncurses
+    start_color(); //starts color
+    init_pair(1, COLOR_YELLOW, COLOR_MAGENTA); // color pair definition, change later, testing
+    init_pair(2,COLOR_CYAN, COLOR_BLACK);
+    init_pair(3,COLOR_MAGENTA, COLOR_WHITE);
+    noecho(); //dont show user input
+    cbreak(); //all input types
+    curs_set(0); //gets rid of cursor
 
-    // initialize windows here
-    // positions have to be hard-coded
-    songList = newwin(30, 25, 1, 1); // newwin(xlength, ylength, xpos, ypos);
-    currPlay = newwin(25, 50, 1, 30);
-    window3 = newwin(25, 50, 1, 90);
-    window4 = newwin(15, 20, 1, 150);
-
-    // allow keypad input for navigation
-    keypad(songList, TRUE);
+    //initialize windows here
+    songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength (up down), ylength (left right), xpos, ypos<>);
+    currPlay = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
+    window3 = newwin((LINES/3),COLS/2, 2*(LINES/3), (COLS/4));
+    window4 = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
+    
+    keypad(stdscr, TRUE); //allows keypad
     keypad(currPlay, TRUE);
+    keypad(songList, TRUE);
     keypad(window3, TRUE);
     keypad(window4, TRUE);
 
-    // Let wgetch() return periodically so the UI thread can stop cleanly.
-    wtimeout(songList, 100);
-    wtimeout(currPlay, 100);
-    wtimeout(window3, 100);
-    wtimeout(window4, 100);
 
-    // set up window list for selecting current window
-    windows.clear();
     windows.push_back(songList);
     windows.push_back(currPlay);
     windows.push_back(window3);
     windows.push_back(window4);
+    
+    currWin = windows.begin(); //iterator at start of vector
+}
 
-    currWin = windows.begin(); // iterator at start of vector
-    tesRunning = true;
+void NompTUI::initPlayer()
+{
+    mpvPlayer = std::make_unique<MPVPlayer>();
+    fluidSynthPlayer = std::make_unique<FluidSynthPlayer>();
 }
 
 void NompTUI::displayScreen()
 {
-    // function call to read songs off of folder/playlist here
-    // display text using mvwprintw([window], x, y
+    //function call to read songs off of folder/playlist here
+    //display text using mvwprintw([window], x, y
+    mvwprintw(songList,2,10,"Song Queue");
+    mvwprintw(currPlay,2,10,"Currently Playing");
+    mvwprintw(window3,2,10,"Window 3");
+    mvwprintw(window4,2,10,"Window 4");
+
     for (auto a : windows)
     {
         if (a == *currWin)
         {
-            wattron(a, COLOR_PAIR(1));
-            box(a, 0, 0);
-            wattroff(a, COLOR_PAIR(1));
+            wattron(a,COLOR_PAIR(1));
+            box(a,0,0);
+            wattroff(a,COLOR_PAIR(1));
         }
         else
         {
-            wattron(a, COLOR_PAIR(2));
-            box(a, 0, 0);
-            wattroff(a, COLOR_PAIR(2));
+            wattron(a,COLOR_PAIR(2));
+            box(a,0,0);
+            wattroff(a,COLOR_PAIR(2));
         }
         wrefresh(a);
-    }
+        }
 }
 
-// We can put a case for "ENTER" that selects the window and runs
-// another method specific to each window
+//We can put a case for "ENTER" that selects the window and runs
+//another method specific to each window
+
 void NompTUI::songListSelect(WINDOW *win)
 {
-    wbkgd(win, COLOR_PAIR(3));
-    // another array/list for scrolling through songs? esc to exit?
-    wgetch(win);
-    wbkgd(win, COLOR_PAIR(0));
+    wbkgd(win,COLOR_PAIR(3));
+    while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
+    {
+        switch (getUserInput(*currWin))
+        {
+            case KEY_DOWN:
+                //move down in song list
+                // highlight current row
+                continue;
+            case KEY_UP:
+                //move up in song list
+                // highlight current row
+                continue;
+            //case '\n':
+            //case KEY_ENTER:
+            case 'o':
+                if(!tesRunning)
+                {
+                    mpvPlayer->play("output.flac");
+                    //fluidSynthPlayer->play("/home/briskycola/Downloads/audio/Daft Punk - Digital Love.mid", "/usr/share/soundfonts/FluidR3_GM.sf2");
+                }
+                break;
+            default:
+                wrefresh(*currWin);
+                break;
+        }
+        break;
+    }
+    wbkgd(win,COLOR_PAIR(0));
 }
 
 int NompTUI::getUserInput(WINDOW *win)
@@ -85,53 +117,33 @@ int NompTUI::getUserInput(WINDOW *win)
 
 void NompTUI::selectWindow()
 {
-    if (windows.empty())
-    {
-        return;
-    }
-
     userInput = getUserInput(*currWin);
     switch (userInput)
     {
     case KEY_LEFT:
-        if (currWin != windows.begin())
+        if(currWin!=windows.begin())
         {
-            --currWin;
-        }
+            currWin--;
+        };
         break;
-    case KEY_RIGHT: {
-        auto nextIt = currWin;
-        ++nextIt;
-        if (nextIt != windows.end())
+
+        case KEY_RIGHT:
+        if(currWin!=windows.end()-1)
         {
-            currWin = nextIt;
-        }
+        currWin++;
+        };
         break;
-    }
-    case KEY_DOWN:
+        
+    case '\n': //enter pressed
         songListSelect(*currWin);
         break;
+        
+    case 'p':
+        mpvPlayer->togglePause();
+        //fluidSynthPlayer->togglePause();
+        break;
+        
     default:
         break;
     }
-}
-
-NompTUI::~NompTUI()
-{
-    if (!tesRunning)
-    {
-        return;
-    }
-
-    for (auto w : windows)
-    {
-        if (w != nullptr)
-        {
-            delwin(w);
-        }
-    }
-    windows.clear();
-
-    endwin();
-    tesRunning = false;
 }

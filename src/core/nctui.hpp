@@ -1,31 +1,31 @@
-#ifndef NCTUI_HPP
-#define NCTUI_HPP
-
+#pragma once
+#include "MPVPlayer.hpp"
+#include "FluidSynthPlayer.hpp"
 #include <vector>
+#include <memory>
 #include <ncurses.h>
 
 class NompTUI
 {
-private:
-    bool tesRunning = false;
+    private:
+        bool tesRunning = false;
+        std::vector<WINDOW*> windows;
+        std::vector<WINDOW*>::iterator currWin;
 
-    WINDOW *songList = nullptr;
-    WINDOW *currPlay = nullptr;
-    WINDOW *window3 = nullptr;
-    WINDOW *window4 = nullptr;
+        WINDOW *songList;
+        WINDOW *currPlay;
+        WINDOW *window3;
+        WINDOW *window4;
 
-    std::vector<WINDOW*> windows; // vector of windows for selecting current window
-    std::vector<WINDOW*>::iterator currWin = windows.begin();
-    int userInput = 0;
+        std::unique_ptr<MPVPlayer> mpvPlayer;
+        std::unique_ptr<FluidSynthPlayer> fluidSynthPlayer;
+      public:
+        int userInput;
 
-public:
-    void initCurses();
-    void displayScreen();
-    void songListSelect(WINDOW *win);
-    int getUserInput(WINDOW *win);
-    void selectWindow();
-
-    ~NompTUI();
+        void initCurses();
+        void initPlayer();
+        void displayScreen();
+        void songListSelect(WINDOW *win);
+        int getUserInput(WINDOW *win);
+        void selectWindow();
 };
-
-#endif // NCTUI_HPP
