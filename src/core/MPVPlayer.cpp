@@ -1,7 +1,7 @@
 #include "MPVPlayer.hpp"
 
 #if defined(__linux__) || defined(__APPLE__)
-#include "CbreakMode.hpp"
+// The ncurses TUI reads keyboard input; the player must not compete for stdin.
 #endif
 
 #include <iostream>
@@ -98,11 +98,6 @@ bool MPVPlayer::play(const std::string &filename)
         {
             break;
         }
-
-#ifdef CBREAKMODE_H
-        char ch = getCharFromKeyboard();
-        if (ch == 'p') togglePause();
-#endif
     }
     return true;
 }

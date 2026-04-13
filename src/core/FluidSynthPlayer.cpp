@@ -1,5 +1,5 @@
 #include "FluidSynthPlayer.hpp"
-#include "CbreakMode.hpp"
+// The ncurses TUI reads keyboard input; the player must not compete for stdin.
 #include <iostream>
 #include <csignal>
 
@@ -96,12 +96,7 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
         {
             break;
         }
-
-
-    char ch = getCharFromKeyboard();
-    if (ch == 'p') togglePause();
-
-
+        // TUI handles keyboard input (e.g. arrow navigation/pause in future).
     }
 
     // Stop immediately if we CTRL+C
