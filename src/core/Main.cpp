@@ -11,8 +11,8 @@ void display(NompTUI &tui)
 
 int main(int argc, char **argv)
 {
+    
     NompTUI tui;
-
     // FluidSynth has a lot of error output
     // on Linux that is just pure noise. It's really
     // just ALSA trying to find audio devices. It's
@@ -23,6 +23,7 @@ int main(int argc, char **argv)
 #endif
     
     tui.initCurses();
+    tui.initPlayer();
     display(tui);
     endwin();
     return 0;

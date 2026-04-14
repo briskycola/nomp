@@ -1,32 +1,37 @@
+#pragma once
 #include "MPVPlayer.hpp"
 #include "FluidSynthPlayer.hpp"
-#include <memory>
 #include <vector>
+#include <memory>
 #include <ncurses.h>
-#ifndef nctui
-#define nctui
+
 class NompTUI
 {
     private:
-        
-    public:
-        bool tesRunning = false;
         std::vector<WINDOW*> windows;
         std::vector<WINDOW*>::iterator currWin;
-        int userInput;
-        
+
         WINDOW *songList;
         WINDOW *currPlay;
-        WINDOW *window3;
-        WINDOW *window4;
+        WINDOW *controlBar;
+        WINDOW *settings;
+
+        std::unique_ptr<MPVPlayer> mpvPlayer;
+        std::unique_ptr<FluidSynthPlayer> fluidSynthPlayer;
         
+      public:
+        int userInput;
+
         void initCurses();
+        void initPlayer();
+        
         void displayScreen();
-        void songListSelect(WINDOW *win);
+        
+        void songListSelect();
+        void currPlaySelect();
+        void controlBarSelect();
+        void settingsSelect();
+        
         int getUserInput(WINDOW *win);
         void selectWindow();
-        std::unique_ptr<MPVPlayer> mpvPlayer;
-        std::unique_ptr<FluidSynthPlayer> fsPlayer;
 };
-
-#endif
