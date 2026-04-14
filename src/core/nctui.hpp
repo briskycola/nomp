@@ -1,3 +1,6 @@
+#include "MPVPlayer.hpp"
+#include "FluidSynthPlayer.hpp"
+#include <memory>
 #include <vector>
 #include <ncurses.h>
 #ifndef nctui
@@ -17,11 +20,13 @@ class NompTUI
         WINDOW *window3;
         WINDOW *window4;
         
-        void init_curses();
+        void initCurses();
         void displayScreen();
         void songListSelect(WINDOW *win);
         int getUserInput(WINDOW *win);
         void selectWindow();
+        std::unique_ptr<MPVPlayer> mpvPlayer;
+        std::unique_ptr<FluidSynthPlayer> fsPlayer;
 };
 
 #endif

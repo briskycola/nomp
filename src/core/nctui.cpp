@@ -1,28 +1,21 @@
 //IMPORTANT
 //X and Y are "flipped" in terminal
 //X is up and down Y is left-right
-#include "StartPlayer.hpp"
 #include "nctui.hpp"
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <ncurses.h>
 #include <cstdlib>
 #include <vector>
 #include <thread>
+#include "MPVPlayer.hpp"
 
 //Global Vars
 //Add more windows here for each tab/button/thing
 
-MPVPlayer* playerptr;
-
-void testThread()
+void NompTUI::initCurses()
 {
-    playerptr = &startPlayer(2, "/Users/rileywhite/TerminalStuff/sftwr380/nomp/songs/Rosalina_Observatory_2.mp3"); //hardcode path to song, first arg: 2 = music file, 3 = midi
-}
-
-void NompTUI::init_curses()
-{
-    
     //setlocale(LC_ALL, "");
     initscr(); //initializes ncurses
     start_color(); //starts color
@@ -104,10 +97,12 @@ void NompTUI::songListSelect(WINDOW *win)
             case 'o':
                 if(!tesRunning)
                 {
-                    tesRunning=true;
-                    std::thread tes(testThread);
-                    tes.detach();
+                    std::cout<<"works"<<std::endl;
                 }
+                break;
+            case 'p':
+                mpvPlayer->play("/Users/rileywhite/TerminalStuff/sftwr380/nomp/songs/Rosalina_Observatory_2.mp3");
+                std::cout<<"playing music"<<std::endl;
                 break;
             default:
                 wrefresh(*currWin);
@@ -145,10 +140,6 @@ void NompTUI::selectWindow()
         
     case '\n': //enter pressed
         songListSelect(*currWin);
-        break;
-        
-    case 'p':
-        playerptr->togglePause();
         break;
         
     default:

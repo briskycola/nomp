@@ -2,7 +2,7 @@
 
 void display(NompTUI &tui)
 {
-    while(tui.userInput != '1')
+    while(tui.userInput != 27)
     {
         tui.displayScreen();
         tui.selectWindow();
@@ -23,7 +23,6 @@ int main(int argc, char **argv)
 #endif
     
     tui.initCurses();
-    tui.initPlayer();
     display(tui);
     endwin();
     return 0;
