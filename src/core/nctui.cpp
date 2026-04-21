@@ -7,11 +7,11 @@
 #include <vector>
 #include <csignal>
 
-volatile sig_atomic_t is_resize_needed = false;
+volatile sig_atomic_t isResizeNeeded = false;
 
 void handle_sigwinch(int signal)
 {
-    is_resize_needed = true;
+    isResizeNeeded = true;
 }
 
 void NompTUI::initCurses()
@@ -132,13 +132,13 @@ int NompTUI::getUserInput(WINDOW *win)
 
 void NompTUI::selectWindow()
 {
-    if (is_resize_needed)
+    if (isResizeNeeded)
     {
         endwin();
         refresh();
         deleteWindows();
         initCurses();
-        is_resize_needed = false;
+        isResizeNeeded = false;
     }
     userInput = getUserInput(*currWin);
     switch (userInput)
