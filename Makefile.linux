@@ -1,6 +1,6 @@
 # Makefile for Linux.
 CXX := g++
-CXXFLAGS := -std=c++14 -Wall -Werror
+CXXFLAGS := -std=c++17 -Wall -Werror
 
 SRC_DIR := src
 OBJ_DIR := obj
