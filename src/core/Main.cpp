@@ -1,34 +1,30 @@
-#include "StartPlayer.hpp"
-#include "CbreakMode.hpp"
-#include <csignal>
+#include "nctui.hpp"
 
-volatile sig_atomic_t isPlaying = true;
-
-void handleSignal(int signal)
+void display(NompTUI &tui)
 {
-    isPlaying = false;
+    while(tui.userInput != '1')
+    {
+        tui.displayScreen();
+        tui.selectWindow();
+    }
 }
 
 int main(int argc, char **argv)
 {
-    // Check for signals from the OS.
-    signal(SIGINT, handleSignal);
-    signal(SIGTERM, handleSignal);
+    NompTUI tui;
 
-#if defined(__linux__) || defined(__APPLE__)
-    termios original;
-
-    // Enable Cbreak mode.
-    enableCbreakMode(original);
+    // FluidSynth has a lot of error output
+    // on Linux that is just pure noise. It's really
+    // just ALSA trying to find audio devices. It's
+    // not important, and there's no clear way to fix
+    // it, so we will just throw away all stderr.
+#if defined(__linux__)
+    freopen("/dev/null", "w", stderr);
 #endif
-
-    // Start the music player.
-    startPlayer(argc, argv);
-
-#if defined(__linux__) || defined(__APPLE__)
-    // Disable Cbreak mode.
-    disableCbreakMode(original);
-#endif
-
+    
+    tui.initCurses();
+    tui.initPlayer();
+    display(tui);
+    endwin();
     return 0;
 }

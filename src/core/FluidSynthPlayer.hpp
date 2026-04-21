@@ -1,3 +1,4 @@
+#pragma once
 #include <fluidsynth.h>
 #include <string>
 
@@ -21,10 +22,14 @@ class FluidSynthPlayer
         // to fluidsynth.
         fluid_audio_driver_t *audioDriver;
 
+        // Preserve SoundFont ID
+        // 0 = no SoundFont loaded
+        int sfid;
+
         // Bool variable to check if player
         // is currently paused or not.
         bool isPaused;
-        
+       
     public:
         FluidSynthPlayer();
         ~FluidSynthPlayer();
