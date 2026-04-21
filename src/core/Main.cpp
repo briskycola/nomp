@@ -2,7 +2,7 @@
 
 void display(NompTUI &tui)
 {
-    while(tui.userInput != '1')
+    while(tui.userInput != 27)
     {
         tui.displayScreen();
         tui.selectWindow();
@@ -11,8 +11,8 @@ void display(NompTUI &tui)
 
 int main(int argc, char **argv)
 {
+    
     NompTUI tui;
-
     // FluidSynth has a lot of error output
     // on Linux that is just pure noise. It's really
     // just ALSA trying to find audio devices. It's
