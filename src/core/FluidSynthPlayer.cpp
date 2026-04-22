@@ -53,6 +53,22 @@ FluidSynthPlayer::~FluidSynthPlayer()
     }
 }
 
+bool FluidSynthPlayer::isValidFile(const std::string &midiFile, const std::string &soundfontFile)
+{
+    if (!fluid_is_soundfont(soundfontFile.c_str()))
+    {
+        std::cerr << "Could not load SoundFont file\n";
+        return false;
+    }
+
+    if (!fluid_is_midifile(midiFile.c_str()))
+    {
+        std::cerr << "Could not load MIDI file\n";
+        return false;
+    }
+    return true;
+}
+
 bool FluidSynthPlayer::togglePause()
 {
     // Pause music.
@@ -74,17 +90,7 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
 {
     // Check if the user entered a valid
     // MIDI file and SoundFont file
-    if (!fluid_is_soundfont(soundfontFile.c_str()))
-    {
-        std::cerr << "Could not load SoundFont file\n";
-        return false;
-    }
-
-    if (!fluid_is_midifile(midiFile.c_str()))
-    {
-        std::cerr << "Could not load MIDI file\n";
-        return false;
-    }
+    if (!isValidFile(midiFile, soundfontFile)) return false;
 
     if (player)
     {

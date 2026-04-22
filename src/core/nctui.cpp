@@ -5,10 +5,19 @@
 #include "nctui.hpp"
 #include <ncurses.h>
 #include <vector>
+#include <csignal>
+
+volatile sig_atomic_t isResizeNeeded = false;
+
+void handle_sigwinch(int signal)
+{
+    isResizeNeeded = true;
+}
 
 void NompTUI::initCurses()
 {
-    
+    // Check for SIGWINCH
+    signal(SIGWINCH, handle_sigwinch);
     //setlocale(LC_ALL, "");
     initscr(); //initializes ncurses
     start_color(); //starts color
@@ -38,6 +47,12 @@ void NompTUI::initCurses()
     windows.push_back(window4);
     
     currWin = windows.begin(); //iterator at start of vector
+}
+
+void NompTUI::deleteWindows()
+{
+    for (auto a : windows) { if (a) delwin(a); }
+    windows.clear();
 }
 
 void NompTUI::initPlayer()
@@ -117,6 +132,14 @@ int NompTUI::getUserInput(WINDOW *win)
 
 void NompTUI::selectWindow()
 {
+    if (isResizeNeeded)
+    {
+        endwin();
+        refresh();
+        deleteWindows();
+        initCurses();
+        isResizeNeeded = false;
+    }
     userInput = getUserInput(*currWin);
     switch (userInput)
     {
