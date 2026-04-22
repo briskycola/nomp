@@ -9,7 +9,7 @@
 
 volatile sig_atomic_t isResizeNeeded = false;
 
-void handle_sigwinch(int signal)
+void handleSigwinch(int signal)
 {
     isResizeNeeded = true;
 }
@@ -17,7 +17,7 @@ void handle_sigwinch(int signal)
 void NompTUI::initCurses()
 {
     // Check for SIGWINCH
-    signal(SIGWINCH, handle_sigwinch);
+    signal(SIGWINCH, handleSigwinch);
     //setlocale(LC_ALL, "");
     initscr(); //initializes ncurses
     start_color(); //starts color
