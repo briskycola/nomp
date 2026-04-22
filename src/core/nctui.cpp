@@ -118,12 +118,12 @@ void NompTUI::songListSelect(WINDOW *win)
             case 'o':
                 if(!tesRunning)
                 {
-                    mpvPlayer->play("/Users/baydon/Downloads/Elijah_K - A Brighter Tomorrow.mp3");
-
-                    //mpvPlayer->play("output.flac");
+                   
+                    mpvPlayer->play("output.flac");
+                    //mpvPlayer->play("/Users/baydon/Downloads/Elijah_K - A Brighter Tomorrow.mp3");
                     //fluidSynthPlayer->play("/home/briskycola/Downloads/audio/Daft Punk - Digital Love.mid", "/usr/share/soundfonts/FluidR3_GM.sf2");
 
-                    // Give mpv a brief moment to populate metadata, then redraw once.
+                    // populate metadata
                     for (int i = 0; i < 20; ++i)
                     {
                         const std::string title = mpvPlayer->getMetadata("title");
