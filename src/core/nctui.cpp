@@ -33,7 +33,8 @@ void NompTUI::initCurses()
     init_pair(NEUTRAL, COLOR_CYAN, COLOR_BLACK);
     init_pair(SELECTED, COLOR_MAGENTA, COLOR_WHITE);
     noecho(); //dont show user input
-    cbreak(); //all input types
+    //cbreak(); //all input types
+    halfdelay(2);
     curs_set(0); //gets rid of cursor
 
     //initialize windows here
@@ -49,7 +50,6 @@ void NompTUI::initCurses()
     keypad(settings, TRUE);
 
     windows.push_back(songList);
-    //windows.push_back(currPlay);
     windows.push_back(controlBar);
     windows.push_back(settings);
     
@@ -109,7 +109,7 @@ void NompTUI::displayScreen()
     //function call to read songs off of folder/playlist here
     //display text using mvwprintw([window], x, y
     mvwprintw(songList,2,10,"Song Queue");
-    mvwprintw(currPlay,2,10,"Currently Playing");
+    mvwprintw(currPlay,2,(getmaxx(currPlay)/2)-9,"Currently Playing");
     mvwprintw(controlBar,2,10,"Window 3");
     mvwprintw(settings,2,10,"Window 4");
 
@@ -144,7 +144,6 @@ void NompTUI::displayScreen()
 // What happens when songList is selected
 void NompTUI::songListSelect()
 {
-    
     wbkgd(*currWin,COLOR_PAIR(3));
     while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
     {
@@ -161,9 +160,8 @@ void NompTUI::songListSelect()
             case KEY_RIGHT:
             case 'd':
                 currWin++;
-                break;
-            case KEY_LEFT:
-            case 'a':
+                wbkgd(songList,COLOR_PAIR(0));
+                displayScreen();
                 break;
             case '\n':
             case KEY_ENTER:
