@@ -90,10 +90,18 @@ void NompTUI::play(const std::string &filename, const std::string &soundfont)
 
 void NompTUI::displayScreen()
 {
-    //function call to read songs off of folder/playlist here
-    //display text using mvwprintw([window], x, y
+    // Function call to read songs off of folder/playlist here
+    // Display text using mvwprintw([window], x, y
+    
+    const std::string title = mpvPlayer ? mpvPlayer->getMetadata("title") : "";
+    const std::string artist = mpvPlayer ? mpvPlayer->getMetadata("artist") : "";
+    const std::string album = mpvPlayer ? mpvPlayer->getMetadata("album") : "";
+
     mvwprintw(songList,2,10,"Song Queue");
     mvwprintw(currPlay,2,10,"Currently Playing");
+    mvwprintw(currPlay,4,2,"Title:  %s", title.empty() ? "N/A" : title.c_str());
+    mvwprintw(currPlay,5,2,"Artist: %s", artist.empty() ? "N/A" : artist.c_str());
+    mvwprintw(currPlay,6,2,"Album:  %s", album.empty() ? "N/A" : album.c_str());
     mvwprintw(window3,2,10,"Window 3");
     mvwprintw(window4,2,10,"Window 4");
 
@@ -115,8 +123,8 @@ void NompTUI::displayScreen()
         }
 }
 
-//We can put a case for "ENTER" that selects the window and runs
-//another method specific to each window
+// We can put a case for "ENTER" that selects the window and runs
+// another method specific to each window
 
 void NompTUI::songListSelect(WINDOW *win)
 {
@@ -137,6 +145,20 @@ void NompTUI::songListSelect(WINDOW *win)
             //case KEY_ENTER:
             case 'o':
                 play("output.flac", "/usr/share/soundfonts/FluidR3_GM.sf2");
+                // populate metadata
+                for (int i = 0; i < 20; ++i)
+                {
+                    const std::string title = mpvPlayer->getMetadata("title");
+                    const std::string artist = mpvPlayer->getMetadata("artist");
+                    const std::string album = mpvPlayer->getMetadata("album");
+
+                    if (!title.empty() || !artist.empty() || !album.empty())
+                    {
+                        break;
+                    }
+                    napms(50);
+                }
+                displayScreen();
                 break;
             case 'i':
                 play("/home/briskycola/Downloads/audio/Daft Punk - Digital Love.mid", "/usr/share/soundfonts/FluidR3_GM.sf2");

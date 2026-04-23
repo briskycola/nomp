@@ -25,4 +25,5 @@ class MPVPlayer
         bool stop();
         bool togglePause();
         bool seek(const std::string time);
+        std::string getMetadata(const std::string &key) const;
 };
