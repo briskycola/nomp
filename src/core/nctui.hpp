@@ -1,5 +1,6 @@
 #pragma once
 #include "MPVPlayer.hpp"
+#include "GetSongs.hpp"
 #include "FluidSynthPlayer.hpp"
 #include <vector>
 #include <memory>
@@ -16,15 +17,24 @@ class NompTUI
         WINDOW *controlBar;
         WINDOW *settings;
 
+        std::unique_ptr<GetSongs> getSongs;
         std::unique_ptr<MPVPlayer> mpvPlayer;
         std::unique_ptr<FluidSynthPlayer> fluidSynthPlayer;
         
+        
+
+        std::string filenamestr;
+        const char* filenameptr;
+
       public:
+        std::vector<std::filesystem::path> files;
+        std::vector<std::filesystem::path>::iterator currSong;
         int userInput;
 
         void initCurses();
         void initPlayer();
-        
+
+        void displaySongs();
         void displayScreen();
         
         void songListSelect();
@@ -35,3 +45,5 @@ class NompTUI
         int getUserInput(WINDOW *win);
         void selectWindow();
 };
+
+
