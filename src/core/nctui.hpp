@@ -20,8 +20,6 @@ class NompTUI
         std::unique_ptr<GetSongs> getSongs;
         std::unique_ptr<MPVPlayer> mpvPlayer;
         std::unique_ptr<FluidSynthPlayer> fluidSynthPlayer;
-        
-        
 
         std::string filenamestr;
         const char* filenameptr;
@@ -33,6 +31,7 @@ class NompTUI
 
         void initCurses();
         void initPlayer();
+        void deleteWindows();
 
         void displaySongs();
         void displayScreen();
@@ -45,5 +44,3 @@ class NompTUI
         int getUserInput(WINDOW *win);
         void selectWindow();
 };
-
-

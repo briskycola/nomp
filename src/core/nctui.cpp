@@ -16,6 +16,14 @@
 #define SELECTED 3
 
 //Initializing ncurses library tools
+
+volatile sig_atomic_t isResizeNeeded = false;
+
+void handleSigwinch(int signal)
+{
+    isResizeNeeded = true;
+}
+
 void NompTUI::initCurses()
 {
     //setlocale(LC_ALL, "");
@@ -81,14 +89,30 @@ void NompTUI::displaySongs()
         
 }
 
-//Displays screen
+void NompTUI::deleteWindows()
+{
+    for (auto a : windows) { if (a) delwin(a); }
+    windows.clear();
+}
+
+
 void NompTUI::displayScreen()
 {
-    mvwprintw(songList,2,2,"Song Queue");
-    mvwprintw(currPlay,2,2,"Currently Playing");
-    mvwprintw(controlBar,2,2,"Control Bar");
-    mvwprintw(settings,2,2,"Settings");
-    
+    if (isResizeNeeded)
+    {
+        endwin();
+        refresh();
+        deleteWindows();
+        initCurses();
+        isResizeNeeded = false;
+    }
+    //function call to read songs off of folder/playlist here
+    //display text using mvwprintw([window], x, y
+    mvwprintw(songList,2,10,"Song Queue");
+    mvwprintw(currPlay,2,10,"Currently Playing");
+    mvwprintw(controlBar,2,10,"Window 3");
+    mvwprintw(settings,2,10,"Window 4");
+
     wattron(currPlay,COLOR_PAIR(NEUTRAL));
     box(currPlay,0,0);
     wattroff(currPlay,COLOR_PAIR(NEUTRAL));
@@ -239,7 +263,6 @@ void NompTUI::selectWindow()
         mpvPlayer->togglePause();
         fluidSynthPlayer->togglePause();
         break;
-
     default:
         break;
     }

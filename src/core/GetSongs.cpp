@@ -48,7 +48,7 @@ GetSongs::GetSongs()
 std::vector<std::filesystem::path> GetSongs::getSongFilePaths()
 {
     // Vector of file names to return
-    std::vector<std::filesystem::path> files;
+    std::vector<std::filesystem::path> files {};
 
     // Supported audio files
     const std::vector<std::string> ALLOWED_EXTENSIONS = 
@@ -76,9 +76,8 @@ std::vector<std::filesystem::path> GetSongs::getSongFilePaths()
 
             // Only read files (skip over subdirectoies)
             if (!entry.is_regular_file()) continue;
-            
             // Break the string into the path and extension
-            std::filesystem::path path  = entry.path();
+            std::filesystem::path path = entry.path();
             std::string fileExtension = path.extension().string();
 
             // Ensure extensions are all lowercase (lambda function)
@@ -94,7 +93,8 @@ std::vector<std::filesystem::path> GetSongs::getSongFilePaths()
             {
                 // Add file to vector
                 // NOTE: If this doesn't work, remove absolute
-                files.push_back(path);
+                //files.push_back(path);
+                files.push_back(std::filesystem::absolute(path));
             }
         }
     }
