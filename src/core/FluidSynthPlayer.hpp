@@ -22,18 +22,22 @@ class FluidSynthPlayer
         // to fluidsynth.
         fluid_audio_driver_t *audioDriver;
 
+        // Used to hold the status of the player
+        fluid_player_status status;
+
         // Preserve SoundFont ID
         // 0 = no SoundFont loaded
         int sfid;
 
         // Bool variable to check if player
         // is currently paused or not.
-        bool isPaused;
+        //fluid_player_status isPaused;
        
     public:
         FluidSynthPlayer();
         ~FluidSynthPlayer();
         bool isValidFile(const std::string &midiFile, const std::string &soundfontFile);
         bool play(const std::string &midiFile, const std::string &soundfontFile);
+        bool stop();
         bool togglePause();
 };

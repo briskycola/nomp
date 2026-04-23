@@ -8,7 +8,7 @@
 class NompTUI
 {
     private:
-        bool tesRunning = false;
+        bool isFluidSynth;
         std::vector<WINDOW*> windows;
         std::vector<WINDOW*>::iterator currWin;
 
@@ -24,9 +24,13 @@ class NompTUI
 
         void initCurses();
         void deleteWindows();
-        void initPlayer();
         void displayScreen();
         void songListSelect(WINDOW *win);
         int getUserInput(WINDOW *win);
         void selectWindow();
-};
+
+        // Audio Playback functions for TUI
+        void initPlayer();
+        void play(const std::string &filename, const std::string &soundfont);
+        void togglePause();
+ };

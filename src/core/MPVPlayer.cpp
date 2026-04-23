@@ -31,6 +31,37 @@ MPVPlayer::~MPVPlayer()
     mpvHandle = nullptr;
 }
 
+bool MPVPlayer::play(const std::string &filename)
+{
+    // This array represents the command sent
+    // to the mpv instance along with it's arguments.
+    //
+    // In this case, we are going to load an
+    // audio file and specify the file name.
+    std::array<const char*, 3> mpvCommand = {"loadfile", filename.c_str(), nullptr};
+
+    // Send the command to the mpv instance.
+    if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
+    {
+        std::cerr << "Failed to load audio file\n";
+        return false;
+    }
+    
+    return true;
+}
+
+bool MPVPlayer::stop()
+{
+    // MPV command to stop the player
+    std::array<const char*, 3> mpvCommand = {"stop", nullptr};
+    if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
+    {
+        // Return false if command fails
+        return false;
+    }
+    return true;
+}
+
 bool MPVPlayer::togglePause()
 {
     // Check if we can get pause data
@@ -63,24 +94,5 @@ bool MPVPlayer::seek(const std::string time)
         std::cerr << "Failed to seek mpv player\n";
         return false;
     }
-    return true;
-}
-
-bool MPVPlayer::play(const std::string &filename)
-{
-    // This array represents the command sent
-    // to the mpv instance along with it's arguments.
-    //
-    // In this case, we are going to load an
-    // audio file and specify the file name.
-    std::array<const char*, 3> mpvCommand = {"loadfile", filename.c_str(), nullptr};
-
-    // Send the command to the mpv instance.
-    if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
-    {
-        std::cerr << "Failed to load audio file\n";
-        return false;
-    }
-    
     return true;
 }

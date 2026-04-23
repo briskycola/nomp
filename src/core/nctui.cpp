@@ -3,6 +3,7 @@
 //X is up and down Y is left-right
 //#include "StartPlayer.hpp"
 #include "nctui.hpp"
+#include <fluidsynth/midi.h>
 #include <ncurses.h>
 #include <vector>
 #include <csignal>
@@ -61,6 +62,32 @@ void NompTUI::initPlayer()
     fluidSynthPlayer = std::make_unique<FluidSynthPlayer>();
 }
 
+void NompTUI::play(const std::string &filename, const std::string &soundfont)
+{
+    // Stop MPV and FluidSynth players (if they are playing)
+    mpvPlayer->stop();
+    fluidSynthPlayer->stop();
+
+    // Check if the audio file is a MIDI file.
+    //
+    // If it's a MIDI file, activate FluidSynth.
+    // If it's a regular audio file, activate MPV.
+    //
+    // MPV will handle the rest of the error checking internally.
+    if (fluidSynthPlayer->isValidFile(filename, soundfont))
+    {
+        fluidSynthPlayer->play(filename, soundfont);
+        isFluidSynth = true;
+    }
+
+    else
+    {
+        mpvPlayer->play(filename);
+        isFluidSynth = false;
+    }
+}
+
+
 void NompTUI::displayScreen()
 {
     //function call to read songs off of folder/playlist here
@@ -109,11 +136,10 @@ void NompTUI::songListSelect(WINDOW *win)
             //case '\n':
             //case KEY_ENTER:
             case 'o':
-                if(!tesRunning)
-                {
-                    mpvPlayer->play("output.flac");
-                    //fluidSynthPlayer->play("/home/briskycola/Downloads/audio/Daft Punk - Digital Love.mid", "/usr/share/soundfonts/FluidR3_GM.sf2");
-                }
+                play("output.flac", "/usr/share/soundfonts/FluidR3_GM.sf2");
+                break;
+            case 'i':
+                play("/home/briskycola/Downloads/audio/Daft Punk - Digital Love.mid", "/usr/share/soundfonts/FluidR3_GM.sf2");
                 break;
             default:
                 wrefresh(*currWin);
@@ -153,7 +179,7 @@ void NompTUI::selectWindow()
         case KEY_RIGHT:
         if(currWin!=windows.end()-1)
         {
-        currWin++;
+            currWin++;
         };
         break;
         
@@ -162,8 +188,14 @@ void NompTUI::selectWindow()
         break;
         
     case 'p':
-        mpvPlayer->togglePause();
-        //fluidSynthPlayer->togglePause();
+        if (isFluidSynth)
+        {
+            fluidSynthPlayer->togglePause();
+        }
+        else
+        {
+            mpvPlayer->togglePause();
+        }
         break;
         
     default:
