@@ -80,10 +80,10 @@ void NompTUI::displaySongs()
         filenameptr = filenamestr.c_str();
         if(*currSong==files[fi]){
             wattron(songList, COLOR_PAIR(NEUTRAL));
-            mvwprintw(songList,2*fi+5,1,filenameptr);
+            mvwprintw(songList,2*fi+5,2,filenameptr);
             wattroff(songList, COLOR_PAIR(NEUTRAL));
         }
-        else mvwprintw(songList,2*fi+5,1,filenameptr);
+        else mvwprintw(songList,2*fi+5,2,filenameptr);
         wrefresh(*currWin);
     }
         
@@ -144,8 +144,6 @@ void NompTUI::displayScreen()
 // What happens when songList is selected
 void NompTUI::songListSelect()
 {
-    files = getSongs->getSongFilePaths();
-    currSong = files.begin();
     
     wbkgd(*currWin,COLOR_PAIR(3));
     while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
@@ -155,11 +153,18 @@ void NompTUI::songListSelect()
         switch (getUserInput(*currWin))
         {
             case KEY_DOWN:
-                if(currSong!=files.end()) currSong++;
+                if(currSong!=files.end()-1) currSong++;
                 continue;
             case KEY_UP:
                 if(currSong!=files.begin()) currSong--;  
                 continue;
+            case KEY_RIGHT:
+            case 'd':
+                currWin++;
+                break;
+            case KEY_LEFT:
+            case 'a':
+                break;
             case '\n':
             case KEY_ENTER:
                 mpvPlayer->play(*currSong); //path to file (wav, flac, mp3, etc)
