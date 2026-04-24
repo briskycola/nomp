@@ -4,11 +4,9 @@
 //#include "StartPlayer.hpp"
 #include "nctui.hpp"
 #include "GetSongs.hpp"
-#include <cwchar>
 #include <memory>
 #include <ncurses.h>
 #include <vector>
-#include <iostream>
 #include <csignal>
 
 #define HOVERING 1
@@ -66,6 +64,31 @@ void NompTUI::initPlayer()
     currSong = files.begin();
 }
 
+void NompTUI::play(const std::string &filename, const std::string &soundfont)
+{
+    // Stop MPV and FluidSynth players (if they are playing)
+    mpvPlayer->stop();
+    fluidSynthPlayer->stop();
+
+    // Check if the audio file is a MIDI file.
+    //
+    // If it's a MIDI file, activate FluidSynth.
+    // If it's a regular audio file, activate MPV.
+    //
+    // MPV will handle the rest of the error checking internally.
+    if (fluidSynthPlayer->isValidFile(filename, soundfont))
+    {
+        fluidSynthPlayer->play(filename, soundfont);
+        isFluidSynth = true;
+    }
+
+    else
+    {
+        mpvPlayer->play(filename);
+        isFluidSynth = false;
+    }
+}
+
 
 //TODO: add pointer to files vecotr and integrate
 // this with songListSelect to choose what song to play.
@@ -73,17 +96,16 @@ void NompTUI::initPlayer()
 void NompTUI::displaySongs()
 {
     // for each song in files
-    for(int fi = 0; fi<files.size(); fi++){
+    for(long unsigned int fi = 0; fi<files.size(); fi++){
         // print just the name on each descending
         // converting from path > string > const char*
         filenamestr = files[fi].filename().string();
-        filenameptr = filenamestr.c_str();
         if(*currSong==files[fi]){
             wattron(songList, COLOR_PAIR(NEUTRAL));
-            mvwprintw(songList,2*fi+5,2,filenameptr);
+            mvwprintw(songList, 2*fi+5, 2, "%s", filenamestr.c_str());
             wattroff(songList, COLOR_PAIR(NEUTRAL));
         }
-        else mvwprintw(songList,2*fi+5,2,filenameptr);
+        else mvwprintw(songList,2*fi+5, 2, "%s", filenamestr.c_str());
         wrefresh(*currWin);
     }
         
@@ -165,9 +187,7 @@ void NompTUI::songListSelect()
                 break;
             case '\n':
             case KEY_ENTER:
-                mpvPlayer->play(*currSong); //path to file (wav, flac, mp3, etc)
-                //fluidSynthPlayer->play("", ""); //path to file (Midi), path to soundfont
-                
+                play(*currSong, "/usr/share/soundfonts/FluidR3_GM.sf2");
                 break;
             default:
                 continue;
@@ -187,8 +207,8 @@ void NompTUI::controlBarSelect()
         switch (getUserInput(*currWin))
         {
             case 'p':
-                mpvPlayer->togglePause();
-                fluidSynthPlayer->togglePause();
+                if (isFluidSynth) fluidSynthPlayer->togglePause();
+                else mpvPlayer->togglePause();
             default:
                 wrefresh(*currWin);
                 break;
@@ -263,8 +283,8 @@ void NompTUI::selectWindow()
         break;
         
     case 'p':
-        mpvPlayer->togglePause();
-        fluidSynthPlayer->togglePause();
+        if (isFluidSynth) fluidSynthPlayer->togglePause();
+        else mpvPlayer->togglePause();
         break;
     default:
         break;

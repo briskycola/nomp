@@ -2,7 +2,11 @@
 #include <filesystem>
 #include <iostream>
 #include <cstdlib>
-#include <sys/syslimits.h>
+
+#if defined(__APPLE__)
+    #include <sys/syslimits.h>
+#endif
+
 #include <system_error>
 #include <algorithm>
 #include <cctype>
@@ -51,11 +55,11 @@ std::vector<std::filesystem::path> GetSongs::getSongFilePaths()
     std::vector<std::filesystem::path> files {};
 
     // Supported audio files
-    const std::vector<std::string> ALLOWED_EXTENSIONS = 
-    {
-        ".mp3", ".wav", ".flac", ".aac", ".ogg",
-        ".mid", ".midi", ".sf2", ".sf3", ".m4a", ".aif"
-    };
+    //const std::vector<std::string> ALLOWED_EXTENSIONS = 
+    //{
+    //    ".mp3", ".wav", ".flac", ".aac", ".ogg",
+    //    ".mid", ".midi", ".sf2", ".sf3", ".m4a", ".aif"
+    //};
 
     // Only iterate through folder if it is NOT empty
     if (!songsFolder.empty()) 
@@ -89,13 +93,14 @@ std::vector<std::filesystem::path> GetSongs::getSongFilePaths()
             // std::find returns an iterator pointing to the location of where fileExtension
             // was found within ALLOWED_EXTENSIONS.
             // If the pointer does not equal the end of the array, that means a location has been found
-            if (std::find(ALLOWED_EXTENSIONS.begin(), ALLOWED_EXTENSIONS.end(), fileExtension) != ALLOWED_EXTENSIONS.end())
-            {
-                // Add file to vector
-                // NOTE: If this doesn't work, remove absolute
-                //files.push_back(path);
-                files.push_back(std::filesystem::absolute(path));
-            }
+            files.push_back(std::filesystem::absolute(path));
+            //if (std::find(ALLOWED_EXTENSIONS.begin(), ALLOWED_EXTENSIONS.end(), fileExtension) != ALLOWED_EXTENSIONS.end())
+            //{
+            //    // Add file to vector
+            //    // NOTE: If this doesn't work, remove absolute
+            //    //files.push_back(path);
+            //    files.push_back(std::filesystem::absolute(path));
+            //}
         }
     }
 

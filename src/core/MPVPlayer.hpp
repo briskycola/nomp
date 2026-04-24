@@ -22,6 +22,7 @@ class MPVPlayer
         MPVPlayer();
         ~MPVPlayer();
         bool play(const std::string &filename);
+        bool stop();
         bool togglePause();
         bool seek(const std::string time);
 };
