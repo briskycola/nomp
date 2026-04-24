@@ -8,6 +8,8 @@
 //       Selection: Change to use directed graph to handle smooth use input
 //       Add more windows
 //       Use pads for screens that need to scroll
+//       Iterators become invalidated if a vector is resized.
+//       First song lags now, fix that
 // 
 #include "nctui.hpp"
 #include "GetSongs.hpp"
@@ -72,9 +74,11 @@ void NompTUI::initPlayer() //initialize player references and variables
     files = getSongs->getSongFilePaths(); // All files in song folder
     currSong = files.begin(); //iterator for visual files
     //queue = getSongs->getSongFilePaths(); //queue of next songs //Breaks for some reason?
-    queue = getSongs->getSongFilePaths(); //dont worry about why this works it just does
-    queue.clear();
+    queue.reserve(20);
+    queue = {}; //dont worry about why this works it just does
     queueTop = queue.begin(); // iterator that points to the actual current song
+
+    mpvPlayer->play("");
 }
 
 void NompTUI::displaySongs() //display contents of song list to songList
@@ -96,16 +100,17 @@ void NompTUI::displaySongs() //display contents of song list to songList
         
 }
 
-// Could be causing pointer fault error?
 void NompTUI::displayQueue() //display contents of song list to songList
 {
     // for each song in files
+    bool hasbeenhighlighted = false;
     for(int q = 0; q<queue.size(); q++){
         // print just the name on each descending
         // converting from path > string > const char*
         queuefstr = queue[q].filename().string();
         queuefptr = queuefstr.c_str();
-        if(*queueTop==queue[q]){
+        if(*queueTop==queue[q] && hasbeenhighlighted==false){
+            hasbeenhighlighted=true;
             wattron(queueList, COLOR_PAIR(HOVERING));
             mvwprintw(queueList,2*q+5,2,queuefptr);
             wattroff(queueList, COLOR_PAIR(HOVERING));
@@ -180,6 +185,11 @@ void NompTUI::songListSelect()
         wrefresh(*currWin);
         switch (getUserInput(*currWin))
         {
+            case '\n':
+            case KEY_ENTER:
+                mpvPlayer->play(*currSong); //path to file (wav, flac, mp3, etc)
+                //fluidSynthPlayer->play(*currSong, ""); //path to file (Midi), path to soundfont
+                break;
             case KEY_DOWN:
                 if(currSong!=files.end()-1) currSong++;
                 continue;
@@ -192,11 +202,6 @@ void NompTUI::songListSelect()
                 wbkgd(songList,COLOR_PAIR(0));
                 displayScreen();
                 break;
-            case '\n':
-            case KEY_ENTER:
-                mpvPlayer->play(*currSong); //path to file (wav, flac, mp3, etc)
-                fluidSynthPlayer->play(*currSong, ""); //path to file (Midi), path to soundfont
-                break;
             case 'j':
                 //add to queue and play now
                 queue.insert(queue.begin(), *currSong);
@@ -206,7 +211,8 @@ void NompTUI::songListSelect()
                 break;
             case 'k':
                 //play next
-                queue.insert(queue.begin()+1, *currSong);
+                if(queue.size()>0) queue.insert(queue.begin()+1, *currSong);
+                else queue.insert(queue.begin(), *currSong);
                 displayQueue();
                 continue;
             case 'l':
