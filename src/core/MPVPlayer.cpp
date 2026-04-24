@@ -74,13 +74,11 @@ bool MPVPlayer::play(const std::string &filename)
     // In this case, we are going to load an
     // audio file and specify the file name.
     std::array<const char*, 3> mpvCommand = {"loadfile", filename.c_str(), nullptr};
-
     // Send the command to the mpv instance.
     if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
     {
         std::cerr << "Failed to load audio file\n";
         return false;
     }
-    
     return true;
 }

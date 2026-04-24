@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <iostream>
 #include <cstdlib>
+#include <sys/syslimits.h>
 #include <system_error>
 #include <algorithm>
 #include <cctype>
@@ -53,7 +54,7 @@ std::vector<std::filesystem::path> GetSongs::getSongFilePaths()
     const std::vector<std::string> ALLOWED_EXTENSIONS = 
     {
         ".mp3", ".wav", ".flac", ".aac", ".ogg",
-        ".mid", ".midi", ".sf2", ".sf3"
+        ".mid", ".midi", ".sf2", ".sf3", ".m4a", ".aif"
     };
 
     // Only iterate through folder if it is NOT empty
@@ -75,7 +76,6 @@ std::vector<std::filesystem::path> GetSongs::getSongFilePaths()
 
             // Only read files (skip over subdirectoies)
             if (!entry.is_regular_file()) continue;
-
             // Break the string into the path and extension
             std::filesystem::path path = entry.path();
             std::string fileExtension = path.extension().string();
@@ -93,6 +93,7 @@ std::vector<std::filesystem::path> GetSongs::getSongFilePaths()
             {
                 // Add file to vector
                 // NOTE: If this doesn't work, remove absolute
+                //files.push_back(path);
                 files.push_back(std::filesystem::absolute(path));
             }
         }
