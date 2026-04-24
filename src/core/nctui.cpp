@@ -24,6 +24,7 @@ void handleSigwinch(int signal)
 
 void NompTUI::initCurses()
 {
+    signal(SIGWINCH, handleSigwinch);
     //setlocale(LC_ALL, "");
     initscr(); //initializes ncurses
     start_color(); //starts color
