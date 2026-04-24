@@ -15,7 +15,7 @@ class NompTUI
         WINDOW *songList;
         WINDOW *currPlay;
         WINDOW *controlBar;
-        WINDOW *settings;
+        WINDOW *queueList;
 
         std::unique_ptr<GetSongs> getSongs;
         std::unique_ptr<MPVPlayer> mpvPlayer;
@@ -24,9 +24,16 @@ class NompTUI
         std::string filenamestr;
         const char* filenameptr;
 
+        std::string queuefstr;
+        const char* queuefptr;
+
       public:
         std::vector<std::filesystem::path> files;
         std::vector<std::filesystem::path>::iterator currSong;
+
+        std::vector<std::filesystem::path> queue;
+        std::vector<std::filesystem::path>::iterator queueTop;
+        
         int userInput;
 
         void initCurses();
@@ -34,12 +41,13 @@ class NompTUI
         void deleteWindows();
 
         void displaySongs();
+        void displayQueue();
         void displayScreen();
         
         void songListSelect();
         void currPlaySelect();
         void controlBarSelect();
-        void settingsSelect();
+        void queueSelect();
         
         int getUserInput(WINDOW *win);
         void selectWindow();
