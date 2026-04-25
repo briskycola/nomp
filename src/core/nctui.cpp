@@ -77,7 +77,6 @@ void NompTUI::initPlayer() //initialize player references and variables
     queue = {}; 
     queueTop = queue.begin(); // iterator that points to the actual current song
     listorqueue = false;
-    mpvPlayer->play("");
 }
 
 void NompTUI::nextInQueue()
