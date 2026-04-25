@@ -1,4 +1,5 @@
 #include "MPVPlayer.hpp"
+#include <functional>
 #include <iostream>
 #include <array>
 
@@ -29,6 +30,17 @@ MPVPlayer::~MPVPlayer()
         mpv_terminate_destroy(mpvHandle);
     }
     mpvHandle = nullptr;
+}
+
+bool MPVPlayer::isIdle()
+{
+    
+    if (mpv_get_property(mpvHandle, "idle-active", MPV_FORMAT_FLAG, &coreIdle) < 0)
+    {
+        std::cerr << "Could not get idle data from mpv\n";
+        return false;
+    }
+    return coreIdle;
 }
 
 bool MPVPlayer::togglePause()

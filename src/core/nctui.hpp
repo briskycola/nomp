@@ -27,6 +27,8 @@ class NompTUI
         std::string queuefstr;
         const char* queuefptr;
 
+        bool listorqueue; //false = left, true = right
+
       public:
         std::vector<std::filesystem::path> files;
         std::vector<std::filesystem::path>::iterator currSong;
@@ -38,6 +40,7 @@ class NompTUI
 
         void initCurses();
         void initPlayer();
+        void nextInQueue();
         void deleteWindows();
 
         void displaySongs();

@@ -42,8 +42,7 @@ void NompTUI::initCurses() //initialize everything for ncurses
     init_pair(NEUTRAL, COLOR_CYAN, COLOR_BLACK);
     init_pair(SELECTED, COLOR_MAGENTA, COLOR_WHITE);
     noecho(); //dont show user input
-    cbreak(); //all input types
-    //halfdelay(2);
+    halfdelay(1);
     curs_set(0); //gets rid of cursor
 
     //initialize windows here
@@ -75,10 +74,20 @@ void NompTUI::initPlayer() //initialize player references and variables
     currSong = files.begin(); //iterator for visual files
     //queue = getSongs->getSongFilePaths(); //queue of next songs //Breaks for some reason?
     queue.reserve(20);
-    queue = {}; //dont worry about why this works it just does
+    queue = {}; 
     queueTop = queue.begin(); // iterator that points to the actual current song
-
+    listorqueue = false;
     mpvPlayer->play("");
+}
+
+void NompTUI::nextInQueue()
+{
+    if(mpvPlayer->isIdle() && listorqueue) //if the mpvplayer is idle, and the last song was played from the queue
+    {
+        queueTop++;
+        if(queueTop == queue.end()) queueTop--;
+        mpvPlayer->play(*queueTop);
+    }
 }
 
 void NompTUI::displaySongs() //display contents of song list to songList
@@ -189,6 +198,7 @@ void NompTUI::songListSelect()
             case KEY_ENTER:
                 mpvPlayer->play(*currSong); //path to file (wav, flac, mp3, etc)
                 //fluidSynthPlayer->play(*currSong, ""); //path to file (Midi), path to soundfont
+                listorqueue = false;
                 break;
             case KEY_DOWN:
                 if(currSong!=files.end()-1) currSong++;
@@ -208,6 +218,7 @@ void NompTUI::songListSelect()
                 mpvPlayer->play(*queueTop);
                 //fluidSynthPlayer->play(*queueTop,"");
                 displayQueue();
+                listorqueue = true;
                 break;
             case 'k':
                 //play next
@@ -240,9 +251,15 @@ void NompTUI::controlBarSelect()
             case 'p':
                 mpvPlayer->togglePause();
                 fluidSynthPlayer->togglePause();
+            case ',':
+                mpvPlayer->seek("-5");
+                continue;
+            case '.':
+                mpvPlayer->seek("5");
+                continue;
             default:
                 // wrefresh(*currWin);
-                break;
+                continue;
         }
         break;
     }
@@ -267,11 +284,14 @@ void NompTUI::queueSelect()
             case '\n':
             case KEY_ENTER:
                 mpvPlayer->play(*queueTop);
+                listorqueue = true;
                 //fluidSynthPlayer->play(*queueTop, "");
                 break;
             case 'c':
                 queue.clear();
+                queueTop=queue.begin();
                 wclear(queueList);
+                mpvPlayer->play("");
             default:
                 continue;
         }
@@ -319,7 +339,9 @@ void NompTUI::selectWindow() // handle window selection
         break;
     case 'c':
         queue.clear();
+        queueTop=queue.begin();
         wclear(queueList);
+        mpvPlayer->play("");
     default:
         break;
     }

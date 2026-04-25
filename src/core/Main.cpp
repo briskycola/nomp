@@ -10,6 +10,7 @@ void display(NompTUI &tui)
     tui.initPlayer();
     while(tui.userInput != 27)
     {
+        tui.nextInQueue();
         tui.displayScreen();
         tui.selectWindow();
     }
@@ -20,17 +21,6 @@ int main(int argc, char **argv)
     NompTUI tui;
     GetSongs gs;
     std::vector<std::filesystem::path> files = gs.getSongFilePaths();
-
-    // TODO: GET RID OF THIS! NOT TO BE PUSHED! FOR TESTING ONLY!
-    // if (!files.empty())
-    // {
-    //     for (const auto& PATH : files)
-    //     {
-    //         std::cout << PATH.string() << "\n";
-    //     }
-    // } else {
-    //     std::cout << "EMPTY NompSongs FOLDER\n";
-    // }
 
     // FluidSynth has a lot of error output
     // on Linux that is just pure noise. It's really
