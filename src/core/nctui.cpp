@@ -3,7 +3,7 @@
 //X is up and down Y is left-right
 //#include "StartPlayer.hpp"
 //
-// TODO: Queue: segfaults on k, doesn't play if there's more than 4 songs loaded (???)
+//       TODO:
 //       Dynamic window resizing
 //       Selection: Change to use directed graph to handle smooth use input
 //       Add more windows
@@ -13,11 +13,9 @@
 // 
 #include "nctui.hpp"
 #include "GetSongs.hpp"
-#include <cwchar>
 #include <memory>
 #include <ncurses.h>
 #include <vector>
-#include <iostream>
 #include <csignal>
 
 #define HOVERING 1
@@ -35,6 +33,7 @@ void handleSigwinch(int signal)
 
 void NompTUI::initCurses() //initialize everything for ncurses
 {
+    signal(SIGWINCH, handleSigwinch);
     //setlocale(LC_ALL, "");
     initscr(); //initializes ncurses
     start_color(); //starts color
@@ -85,25 +84,50 @@ void NompTUI::nextInQueue()
     {
         queueTop++;
         if(queueTop == queue.end()) queueTop--;
-        mpvPlayer->play(*queueTop);
+        play(*queueTop, "");
     }
 }
+
+void NompTUI::play(const std::string &filename, const std::string &soundfont)
+{
+    // Stop MPV and FluidSynth players (if they are playing)
+    mpvPlayer->stop();
+    fluidSynthPlayer->stop();
+
+    // Check if the audio file is a MIDI file.
+    //
+    // If it's a MIDI file, activate FluidSynth.
+    // If it's a regular audio file, activate MPV.
+    //
+    // MPV will handle the rest of the error checking internally.
+    if (fluidSynthPlayer->isValidFile(filename, soundfont))
+    {
+        fluidSynthPlayer->play(filename, soundfont);
+        isFluidSynth = true;
+    }
+
+    else
+    {
+        mpvPlayer->play(filename);
+        isFluidSynth = false;
+    }
+}
+
 
 void NompTUI::displaySongs() //display contents of song list to songList
 {
     // for each song in files
-    for(int fi = 0; fi<files.size(); fi++){
+    for(long unsigned int fi = 0; fi<files.size(); fi++){
         // print just the name on each descending
         // converting from path > string > const char*
         filenamestr = files[fi].filename().string();
-        filenameptr = filenamestr.c_str();
         if(*currSong==files[fi]){
             wattron(songList, COLOR_PAIR(NEUTRAL));
-            mvwprintw(songList,2*fi+5,2,filenameptr);
+            mvwprintw(songList, 2*fi+5, 2, "%s", filenamestr.c_str());
             wattroff(songList, COLOR_PAIR(NEUTRAL));
         }
-        else mvwprintw(songList,2*fi+5,2,filenameptr);
-        wrefresh(songList);
+        else mvwprintw(songList,2*fi+5, 2, "%s", filenamestr.c_str());
+        wrefresh(*currWin);
     }
         
 }
@@ -195,8 +219,7 @@ void NompTUI::songListSelect()
         {
             case '\n':
             case KEY_ENTER:
-                mpvPlayer->play(*currSong); //path to file (wav, flac, mp3, etc)
-                //fluidSynthPlayer->play(*currSong, ""); //path to file (Midi), path to soundfont
+                play(*currSong, ""); //path to file (wav, flac, mp3, etc)
                 listorqueue = false;
                 break;
             case KEY_DOWN:
@@ -214,7 +237,7 @@ void NompTUI::songListSelect()
             case 'j':
                 //add to queue and play now
                 queue.insert(queue.begin(), *currSong);
-                mpvPlayer->play(*queueTop);
+                play(*queueTop, "");
                 //fluidSynthPlayer->play(*queueTop,"");
                 displayQueue();
                 listorqueue = true;
@@ -248,8 +271,8 @@ void NompTUI::controlBarSelect()
         switch (getUserInput(*currWin))
         {
             case 'p':
-                mpvPlayer->togglePause();
-                fluidSynthPlayer->togglePause();
+                if (isFluidSynth) fluidSynthPlayer->togglePause();
+                else mpvPlayer->togglePause();
             case ',':
                 mpvPlayer->seek("-5");
                 continue;
@@ -282,7 +305,7 @@ void NompTUI::queueSelect()
                 break;
             case '\n':
             case KEY_ENTER:
-                mpvPlayer->play(*queueTop);
+                play(*queueTop, "");
                 listorqueue = true;
                 //fluidSynthPlayer->play(*queueTop, "");
                 break;
@@ -333,8 +356,8 @@ void NompTUI::selectWindow() // handle window selection
         break;
         
     case 'p':
-        mpvPlayer->togglePause();
-        fluidSynthPlayer->togglePause();
+        if (isFluidSynth) fluidSynthPlayer->togglePause();
+        else mpvPlayer->togglePause();
         break;
     case 'c':
         queue.clear();

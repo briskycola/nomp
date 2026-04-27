@@ -9,6 +9,7 @@
 class NompTUI
 {
     private:
+        bool isFluidSynth;
         std::vector<WINDOW*> windows;
         std::vector<WINDOW*>::iterator currWin;
 
@@ -22,7 +23,6 @@ class NompTUI
         std::unique_ptr<FluidSynthPlayer> fluidSynthPlayer;
 
         std::string filenamestr;
-        const char* filenameptr;
 
         std::string queuefstr;
         const char* queuefptr;
@@ -39,7 +39,6 @@ class NompTUI
         int userInput;
 
         void initCurses();
-        void initPlayer();
         void nextInQueue();
         void deleteWindows();
 
@@ -54,4 +53,10 @@ class NompTUI
         
         int getUserInput(WINDOW *win);
         void selectWindow();
+
+        // Audio Playback functions for TUI
+        void initPlayer();
+        void play(const std::string &filename, const std::string &soundfont);
+        void togglePause();
+ 
 };
