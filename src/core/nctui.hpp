@@ -23,6 +23,7 @@ class NompTUI
         int userInput;
 
         void initCurses();
+        void deleteWindows();
         void initPlayer();
         
         void displayScreen();

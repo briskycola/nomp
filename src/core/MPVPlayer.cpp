@@ -82,3 +82,23 @@ bool MPVPlayer::play(const std::string &filename)
     }
     return true;
 }
+
+std::string MPVPlayer::getMetadata(const std::string &key) const
+{
+    if (!mpvHandle)
+    {
+        return "";
+    }
+
+    const std::string propertyName = "metadata/" + key;
+    char *value = mpv_get_property_string(mpvHandle, propertyName.c_str());
+
+    if (!value)
+    {
+        return "";
+    }
+
+    std::string metadataValue(value);
+    mpv_free(value);
+    return metadataValue;
+}

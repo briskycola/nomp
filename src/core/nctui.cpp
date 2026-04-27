@@ -5,22 +5,25 @@
 #include "nctui.hpp"
 #include <ncurses.h>
 #include <vector>
-#include <iostream>
 #include <csignal>
 
-#define HOVERING 1
-#define NEUTRAL 2
-#define SELECTED 3
+volatile sig_atomic_t isResizeNeeded = false;
 
-//Initializing ncurses library tools
+void handleSigwinch(int signal)
+{
+    isResizeNeeded = true;
+}
+
 void NompTUI::initCurses()
 {
+    // Check for SIGWINCH
+    signal(SIGWINCH, handleSigwinch);
     //setlocale(LC_ALL, "");
     initscr(); //initializes ncurses
     start_color(); //starts color
-    init_pair(HOVERING, COLOR_YELLOW, COLOR_MAGENTA); // color pair definition, change later, testing
-    init_pair(NEUTRAL, COLOR_CYAN, COLOR_BLACK);
-    init_pair(SELECTED, COLOR_MAGENTA, COLOR_WHITE);
+    init_pair(1, COLOR_YELLOW, COLOR_MAGENTA); // color pair definition, change later, testing
+    init_pair(2,COLOR_CYAN, COLOR_BLACK);
+    init_pair(3,COLOR_MAGENTA, COLOR_WHITE);
     noecho(); //dont show user input
     cbreak(); //all input types
     curs_set(0); //gets rid of cursor
@@ -28,50 +31,52 @@ void NompTUI::initCurses()
     //initialize windows here
     songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength (up down), ylength (left right), xpos, ypos<>);
     currPlay = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
-    controlBar= newwin((LINES/3)+2,(COLS/2)-2, 2*(LINES/3)-1, (COLS/4)+1);
-    settings = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
+    window3 = newwin((LINES/3),COLS/2, 2*(LINES/3), (COLS/4));
+    window4 = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
     
     keypad(stdscr, TRUE); //allows keypad
     keypad(currPlay, TRUE);
     keypad(songList, TRUE);
-    keypad(controlBar, TRUE);
-    keypad(settings, TRUE);
+    keypad(window3, TRUE);
+    keypad(window4, TRUE);
 
 
     windows.push_back(songList);
-    //windows.push_back(currPlay);
-    windows.push_back(controlBar);
-    windows.push_back(settings);
+    windows.push_back(currPlay);
+    windows.push_back(window3);
+    windows.push_back(window4);
     
     currWin = windows.begin(); //iterator at start of vector
 }
 
+void NompTUI::deleteWindows()
+{
+    for (auto a : windows) { if (a) delwin(a); }
+    windows.clear();
+}
 
-
-
-//initializing MPV and Fluidsynth players
 void NompTUI::initPlayer()
 {
     mpvPlayer = std::make_unique<MPVPlayer>();
     fluidSynthPlayer = std::make_unique<FluidSynthPlayer>();
 }
 
-//Displays screen
 void NompTUI::displayScreen()
 {
-    mvwprintw(songList,2,2,"Song Queue");
-    mvwprintw(currPlay,2,2,"Currently Playing");
-    mvwprintw(controlBar,2,2,"Control Bar");
-    mvwprintw(settings,2,2,"Settings");
+    //function call to read songs off of folder/playlist here
+    //display text using mvwprintw([window], x, y
+    const std::string title = mpvPlayer ? mpvPlayer->getMetadata("title") : "";
+    const std::string artist = mpvPlayer ? mpvPlayer->getMetadata("artist") : "";
+    const std::string album = mpvPlayer ? mpvPlayer->getMetadata("album") : "";
 
-    // TODO: need a display function for each window since they all
-    // do different things
+    mvwprintw(songList,2,10,"Song Queue");
+    mvwprintw(currPlay,2,10,"Currently Playing");
+    mvwprintw(currPlay,4,2,"Title:  %s", title.empty() ? "N/A" : title.c_str());
+    mvwprintw(currPlay,5,2,"Artist: %s", artist.empty() ? "N/A" : artist.c_str());
+    mvwprintw(currPlay,6,2,"Album:  %s", album.empty() ? "N/A" : album.c_str());
+    mvwprintw(window3,2,10,"Window 3");
+    mvwprintw(window4,2,10,"Window 4");
 
-    wattron(currPlay,COLOR_PAIR(NEUTRAL));
-    box(currPlay,0,0);
-    wattroff(currPlay,COLOR_PAIR(NEUTRAL));
-    wrefresh(currPlay);
-    
     for (auto a : windows)
     {
         if (a == *currWin)
@@ -87,19 +92,15 @@ void NompTUI::displayScreen()
             wattroff(a,COLOR_PAIR(2));
         }
         wrefresh(a);
-    }
-
-    // displaySongList();
-    // ...
-    
+        }
 }
 
-// Anything ending in "Select" should be interpreted as "Selected" and is what happens when each window is selected after pressing Enter
+//We can put a case for "ENTER" that selects the window and runs
+//another method specific to each window
 
-// What happens when songList is selected
-void NompTUI::songListSelect()
+void NompTUI::songListSelect(WINDOW *win)
 {
-    wbkgd(*currWin,COLOR_PAIR(3));
+    wbkgd(win,COLOR_PAIR(3));
     while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
     {
         switch (getUserInput(*currWin))
@@ -112,10 +113,31 @@ void NompTUI::songListSelect()
                 //move up in song list
                 // highlight current row
                 continue;
-            case '\n':
-            case KEY_ENTER:
-                mpvPlayer->play(""); //path to file (wav, flac, mp3, etc)
-                fluidSynthPlayer->play("", ""); //path to file (Midi), path to soundfont
+            //case '\n':
+            //case KEY_ENTER:
+            case 'o':
+                if(!tesRunning)
+                {
+                   
+                    mpvPlayer->play("output.flac");
+                    //mpvPlayer->play("/Users/baydon/Downloads/Elijah_K - A Brighter Tomorrow.mp3");
+                    //fluidSynthPlayer->play("/home/briskycola/Downloads/audio/Daft Punk - Digital Love.mid", "/usr/share/soundfonts/FluidR3_GM.sf2");
+
+                    // populate metadata
+                    for (int i = 0; i < 20; ++i)
+                    {
+                        const std::string title = mpvPlayer->getMetadata("title");
+                        const std::string artist = mpvPlayer->getMetadata("artist");
+                        const std::string album = mpvPlayer->getMetadata("album");
+
+                        if (!title.empty() || !artist.empty() || !album.empty())
+                        {
+                            break;
+                        }
+                        napms(50);
+                    }
+                    displayScreen();
+                }
                 break;
             default:
                 wrefresh(*currWin);
@@ -123,77 +145,7 @@ void NompTUI::songListSelect()
         }
         break;
     }
-    wbkgd(*currWin,COLOR_PAIR(0));
-}
-
-
-// what happens when currPlay is selected
-// void NompTUI::currPlaySelect()
-// {
-//     wbkgd(*currWin,COLOR_PAIR(3));
-//     while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
-//     {
-//         switch (getUserInput(*currWin))
-//         {
-//             case 'p':
-//                 mpvPlayer->togglePause();
-//                 fluidSynthPlayer->togglePause();
-//                 break;
-//             default:
-//                 wrefresh(*currWin);
-//                 break;
-//         }
-//         break;
-//     }
-//     wbkgd(*currWin,COLOR_PAIR(0));
-// }
-
-// what happens when controlbar is selected
-void NompTUI::controlBarSelect()
-{
-    wbkgd(*currWin,COLOR_PAIR(3));
-    while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
-    {
-        switch (getUserInput(*currWin))
-        {
-            case 'p':
-                mpvPlayer->togglePause();
-                fluidSynthPlayer->togglePause();
-            default:
-                wrefresh(*currWin);
-                break;
-        }
-        break;
-    }
-    wbkgd(*currWin,COLOR_PAIR(0));
-}
-
-//what happens if settings is selected
-void NompTUI::settingsSelect()
-{
-    wbkgd(*currWin,COLOR_PAIR(3));
-    while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
-    {
-        switch (getUserInput(*currWin))
-        {
-            case KEY_DOWN:
-                //move down in song list
-                // highlight current row
-                continue;
-            case KEY_UP:
-                //move up in song list
-                // highlight current row
-                continue;
-            case '\n':
-            case KEY_ENTER:
-                break;
-            default:
-                wrefresh(*currWin);
-                break;
-        }
-        break;
-    }
-    wbkgd(*currWin,COLOR_PAIR(0));
+    wbkgd(win,COLOR_PAIR(0));
 }
 
 int NompTUI::getUserInput(WINDOW *win)
@@ -202,10 +154,16 @@ int NompTUI::getUserInput(WINDOW *win)
     return userInput;
 }
 
-//window selection logic
-// TODO: Change to use directed graph to handle smooth use input
 void NompTUI::selectWindow()
 {
+    if (isResizeNeeded)
+    {
+        endwin();
+        refresh();
+        deleteWindows();
+        initCurses();
+        isResizeNeeded = false;
+    }
     userInput = getUserInput(*currWin);
     switch (userInput)
     {
@@ -216,7 +174,7 @@ void NompTUI::selectWindow()
         };
         break;
 
-    case KEY_RIGHT:
+        case KEY_RIGHT:
         if(currWin!=windows.end()-1)
         {
         currWin++;
@@ -224,18 +182,14 @@ void NompTUI::selectWindow()
         break;
         
     case '\n': //enter pressed
-        if(*currWin==songList) songListSelect(); 
-        //else if(*currWin==currPlay) currPlaySelect();
-        else if(*currWin==controlBar) controlBarSelect();
-        else if(*currWin==settings) settingsSelect();
-        else {}
+        songListSelect(*currWin);
         break;
         
     case 'p':
         mpvPlayer->togglePause();
-        fluidSynthPlayer->togglePause();
+        //fluidSynthPlayer->togglePause();
         break;
-
+        
     default:
         break;
     }

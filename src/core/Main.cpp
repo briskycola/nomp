@@ -1,8 +1,12 @@
 #include "nctui.hpp"
+#include "GetSongs.hpp"
+// #include <iostream>
+#include <vector>
+#include <filesystem>
 
 void display(NompTUI &tui)
 {
-    while(tui.userInput != 27)
+    while(tui.userInput != '1')
     {
         tui.displayScreen();
         tui.selectWindow();
@@ -11,8 +15,21 @@ void display(NompTUI &tui)
 
 int main(int argc, char **argv)
 {
-    
     NompTUI tui;
+    GetSongs gs;
+    std::vector<std::filesystem::path> files = gs.getSongFilePaths();
+
+    // TODO: GET RID OF THIS! NOT TO BE PUSHED! FOR TESTING ONLY!
+    // if (!files.empty())
+    // {
+    //     for (const auto& PATH : files)
+    //     {
+    //         std::cout << PATH.string() << "\n";
+    //     }
+    // } else {
+    //     std::cout << "EMPTY NompSongs FOLDER\n";
+    // }
+
     // FluidSynth has a lot of error output
     // on Linux that is just pure noise. It's really
     // just ALSA trying to find audio devices. It's

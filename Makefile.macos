@@ -1,6 +1,6 @@
 # Makefile for macOS.
 CXX := clang++
-CXXFLAGS := -std=c++14 -Wall 
+CXXFLAGS := -std=c++17 -Wall 
 PKG_CONFIG := pkg-config
 
 MPV_CXXFLAGS := $(shell $(PKG_CONFIG) --cflags mpv)
