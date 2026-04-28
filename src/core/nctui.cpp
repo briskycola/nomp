@@ -82,9 +82,11 @@ void NompTUI::nextInQueue()
 {
     if(mpvPlayer->isIdle() && listorqueue) //if the mpvplayer is idle, and the last song was played from the queue
     {
+        wclear(queueList);
+        displayQueue();
         queueTop++;
         if(queueTop == queue.end()) queueTop--;
-        play(*queueTop, "");
+        play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
     }
 }
 
@@ -109,6 +111,7 @@ void NompTUI::play(const std::string &filename, const std::string &soundfont)
     else
     {
         mpvPlayer->play(filename);
+        displayMetadataOnTUI();
         isFluidSynth = false;
     }
 }
@@ -170,10 +173,20 @@ void NompTUI::displayScreen() // display and refresh screen
         initCurses();
         isResizeNeeded = false;
     }
+
+    //function call to read songs off of folder/playlist here
+    //display text using mvwprintw([window], x, y
+    const std::string title = mpvPlayer ? mpvPlayer->getMetadata("title") : "";
+    const std::string artist = mpvPlayer ? mpvPlayer->getMetadata("artist") : "";
+    const std::string album = mpvPlayer ? mpvPlayer->getMetadata("album") : "";
+    
     //function call to read songs off of folder/playlist here
     //display text using mvwprintw([window], x, y
     mvwprintw(songList,2,10,"Song List");
     mvwprintw(currPlay,2,(getmaxx(currPlay)/2)-9,"Currently Playing");
+    mvwprintw(currPlay,4,2,"Title:  %s", title.empty() ? "N/A" : title.c_str());
+    mvwprintw(currPlay,5,2,"Artist: %s", artist.empty() ? "N/A" : artist.c_str());
+    mvwprintw(currPlay,6,2,"Album:  %s", album.empty() ? "N/A" : album.c_str());
     mvwprintw(controlBar,2,10,"Control Bar");
     mvwprintw(queueList,2,10,"Queue");
 
@@ -219,7 +232,7 @@ void NompTUI::songListSelect()
         {
             case '\n':
             case KEY_ENTER:
-                play(*currSong, ""); //path to file (wav, flac, mp3, etc)
+                play(*currSong, "SoundFonts/HeartGold SoulSilver (WIP).sf2"); //path to file (wav, flac, mp3, etc)
                 listorqueue = false;
                 break;
             case KEY_DOWN:
@@ -237,7 +250,7 @@ void NompTUI::songListSelect()
             case 'j':
                 //add to queue and play now
                 queue.insert(queue.begin(), *currSong);
-                play(*queueTop, "");
+                play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
                 //fluidSynthPlayer->play(*queueTop,"");
                 displayQueue();
                 listorqueue = true;
@@ -305,9 +318,8 @@ void NompTUI::queueSelect()
                 break;
             case '\n':
             case KEY_ENTER:
-                play(*queueTop, "");
+                play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
                 listorqueue = true;
-                //fluidSynthPlayer->play(*queueTop, "");
                 break;
             case 'c':
                 queue.clear();
@@ -367,4 +379,23 @@ void NompTUI::selectWindow() // handle window selection
     default:
         break;
     }
+}
+
+void NompTUI::displayMetadataOnTUI()
+{
+    wclear(currPlay);
+    for (int i = 0; i < 20; ++i)
+    {
+        const std::string title = mpvPlayer->getMetadata("title");
+        const std::string artist = mpvPlayer->getMetadata("artist");
+        const std::string album = mpvPlayer->getMetadata("album");
+
+        if (!title.empty() || !artist.empty() || !album.empty())
+        {
+            break;
+        }
+        napms(50);
+    }
+    displayScreen();
+    return;
 }
