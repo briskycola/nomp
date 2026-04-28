@@ -1,5 +1,4 @@
 #include "MPVPlayer.hpp"
-#include <functional>
 #include <iostream>
 #include <array>
 
@@ -107,4 +106,24 @@ bool MPVPlayer::seek(const std::string time)
         return false;
     }
     return true;
+}
+
+std::string MPVPlayer::getMetadata(const std::string &key) const
+{
+    if (!mpvHandle)
+    {
+        return "";
+    }
+
+    const std::string propertyName = "metadata/" + key;
+    char *value = mpv_get_property_string(mpvHandle, propertyName.c_str());
+
+    if (!value)
+    {
+        return "";
+    }
+
+    std::string metadataValue(value);
+    mpv_free(value);
+    return metadataValue;
 }

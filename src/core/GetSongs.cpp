@@ -1,7 +1,6 @@
 #include "GetSongs.hpp"
 #include <filesystem>
 #include <iostream>
-#include <cstdlib>
 
 #if defined(__APPLE__)
     #include <sys/syslimits.h>

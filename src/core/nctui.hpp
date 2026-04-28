@@ -45,6 +45,7 @@ class NompTUI
         void displaySongs();
         void displayQueue();
         void displayScreen();
+        void displayMetadataOnTUI();
         
         void songListSelect();
         void currPlaySelect();
