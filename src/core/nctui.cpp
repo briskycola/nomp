@@ -80,6 +80,7 @@ void NompTUI::initPlayer() //initialize player references and variables
 
 void NompTUI::nextInQueue()
 {
+    if(queue.empty()) listorqueue = false;
     if(mpvPlayer->isIdle() && listorqueue) //if the mpvplayer is idle, and the last song was played from the queue
     {
         wclear(queueList);
@@ -231,6 +232,7 @@ void NompTUI::songListSelect()
         {
             case '\n':
             case KEY_ENTER:
+                if(files.empty()) break;
                 play(*currSong, "SoundFonts/HeartGold SoulSilver (WIP).sf2"); //path to file (wav, flac, mp3, etc)
                 listorqueue = false;
                 break;
@@ -248,6 +250,7 @@ void NompTUI::songListSelect()
                 break;
             case 'j':
                 //add to queue and play now
+                if(files.empty()) break;
                 queue.insert(queue.begin(), *currSong);
                 play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
                 //fluidSynthPlayer->play(*queueTop,"");
@@ -256,12 +259,14 @@ void NompTUI::songListSelect()
                 break;
             case 'k':
                 //play next
+                if(files.empty()) break;
                 if(queue.size()>0) queue.insert(queue.begin()+1, *currSong);
                 else queue.insert(queue.begin(), *currSong);
                 displayQueue();
                 continue;
             case 'l':
                 //push back
+                if(files.empty()) break;
                 queue.push_back(*currSong);
                 displayQueue();
                 continue;
