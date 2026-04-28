@@ -143,7 +143,7 @@ void NompTUI::displayQueue() //display contents of song list to songList
         // print just the name on each descending
         // converting from path > string > const char*
         queuefstr = queue[q].filename().string();
-        if(*queueTop==queue[q]){ 
+        if(std::distance(std::begin(queue), queueTop) == q){ 
             wattron(queueList, COLOR_PAIR(HOVERING));
             mvwprintw(queueList,2*q+5,2,"%s",queuefstr.c_str());
             wattroff(queueList, COLOR_PAIR(HOVERING));
