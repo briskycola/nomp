@@ -25,7 +25,6 @@ class NompTUI
         std::string filenamestr;
 
         std::string queuefstr;
-        const char* queuefptr;
 
         bool listorqueue; //false = left, true = right
 
