@@ -80,9 +80,13 @@ void NompTUI::initPlayer() //initialize player references and variables
 
 void NompTUI::nextInQueue()
 {
-    if(mpvPlayer->isIdle() && listorqueue) //if the mpvplayer is idle, and the last song was played from the queue
+    bool isIdle = false;
+    if (isFluidSynth) isIdle = fluidSynthPlayer->isIdle();
+    else isIdle = mpvPlayer->isIdle();
+
+    if(isIdle && listorqueue) //if the mpvplayer is idle, and the last song was played from the queue
     {
-        wclear(queueList);
+        //wclear(queueList);
         displayQueue();
         queueTop++;
         if(queueTop == queue.end()) queueTop--;
@@ -95,6 +99,10 @@ void NompTUI::play(const std::string &filename, const std::string &soundfont)
     // Stop MPV and FluidSynth players (if they are playing)
     mpvPlayer->stop();
     fluidSynthPlayer->stop();
+
+    // Clear metadata from the screen for new
+    // metadata
+    wclear(currPlay);
 
     // Check if the audio file is a MIDI file.
     //
@@ -250,7 +258,6 @@ void NompTUI::songListSelect()
                 //add to queue and play now
                 queue.insert(queue.begin(), *currSong);
                 play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
-                //fluidSynthPlayer->play(*queueTop,"");
                 displayQueue();
                 listorqueue = true;
                 break;
@@ -286,10 +293,12 @@ void NompTUI::controlBarSelect()
                 if (isFluidSynth) fluidSynthPlayer->togglePause();
                 else mpvPlayer->togglePause();
             case ',':
-                mpvPlayer->seek("-5");
+                if (fluidSynthPlayer) fluidSynthPlayer->seek(-5.0);
+                else mpvPlayer->seek("-5");
                 continue;
             case '.':
-                mpvPlayer->seek("5");
+                if (fluidSynthPlayer) fluidSynthPlayer->seek(5.0);
+                else mpvPlayer->seek("5");
                 continue;
             default:
                 // wrefresh(*currWin);
@@ -375,14 +384,17 @@ void NompTUI::selectWindow() // handle window selection
         queue.clear();
         queueTop=queue.begin();
         wclear(queueList);
-        mpvPlayer->play("");
+        mpvPlayer->stop();
+        fluidSynthPlayer->stop();
         listorqueue = false;
         break;
     case ',':
-        mpvPlayer->seek("-5");
+        if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+        else mpvPlayer->seek("-5");
         break;        
     case '.':
-        mpvPlayer->seek("5");
+        if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+        else mpvPlayer->seek("5");
         break;
     case '<':
         wclear(queueList);
