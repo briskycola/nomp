@@ -1,5 +1,4 @@
 #include "FluidSynthPlayer.hpp"
-#include <fluidsynth/synth.h>
 #include <iostream>
 
 FluidSynthPlayer::FluidSynthPlayer()
@@ -10,7 +9,7 @@ FluidSynthPlayer::FluidSynthPlayer()
 
     audioDriver = nullptr;
     sfid = 0;
-    isPaused = false;
+    status = (fluid_player_status) fluid_player_get_status(player);
 
     // Disable all logging from FluidSynth
     fluid_set_log_function(FLUID_PANIC, NULL, NULL);
@@ -21,7 +20,7 @@ FluidSynthPlayer::FluidSynthPlayer()
 
     // Change the period size to 2048 to avoid
     // XRUNs on low-end hardware.
-    fluid_settings_setint(settings, "audio.period-size", 2048);
+    fluid_settings_setint(settings, "audio.period-size", 512);
 }
 
 FluidSynthPlayer::~FluidSynthPlayer()
@@ -69,23 +68,6 @@ bool FluidSynthPlayer::isValidFile(const std::string &midiFile, const std::strin
     return true;
 }
 
-bool FluidSynthPlayer::togglePause()
-{
-    // Pause music.
-    if (!isPaused)
-    {
-        fluid_player_stop(player);
-        isPaused = true;
-    }
-    else
-    {
-        fluid_player_play(player);
-        isPaused = false;
-    }
-
-    return true;
-}
-
 bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soundfontFile)
 {
     // Check if the user entered a valid
@@ -94,8 +76,7 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
 
     if (player)
     {
-        fluid_player_stop(player);
-        fluid_player_join(player);
+        stop();
         delete_fluid_player(player);
         player = new_fluid_player(synth);
     }
@@ -122,6 +103,32 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
         std::cerr << "Could not start MIDI playback\n";
         return false;
     }
+    status = (fluid_player_status) fluid_player_get_status(player);
+    return true;
+}
 
+bool FluidSynthPlayer::stop()
+{
+    // Stop FluidSynth, but don't destroy the instance
+    fluid_player_stop(player);
+    fluid_player_join(player);
+    fluid_synth_all_notes_off(synth, -1);
+    fluid_synth_all_sounds_off(synth, -1);
+    return true;
+}
+
+bool FluidSynthPlayer::togglePause()
+{
+    // Pause music.
+    if (status == FLUID_PLAYER_PLAYING)
+    {
+        fluid_player_stop(player);
+        status = (fluid_player_status) fluid_player_get_status(player);
+    }
+    else
+    {
+        fluid_player_play(player);
+        status = (fluid_player_status) fluid_player_get_status(player);
+    }
     return true;
 }
