@@ -80,6 +80,7 @@ void NompTUI::initPlayer() //initialize player references and variables
 
 void NompTUI::nextInQueue()
 {
+    if(queue.empty()) listorqueue = false;
     if(mpvPlayer->isIdle() && listorqueue) //if the mpvplayer is idle, and the last song was played from the queue
     {
         wclear(queueList);
@@ -137,20 +138,19 @@ void NompTUI::displaySongs() //display contents of song list to songList
 
 void NompTUI::displayQueue() //display contents of song list to songList
 {
+    //TODO: keeps highlighting multiple, previous fix would only highlight the first one
     // for each song in files
-    bool hasbeenhighlighted = false;
     for(long unsigned int q = 0; q<queue.size(); q++){
         // print just the name on each descending
         // converting from path > string > const char*
         queuefstr = queue[q].filename().string();
-        queuefptr = queuefstr.c_str();
-        if(*queueTop==queue[q] && hasbeenhighlighted==false){
-            hasbeenhighlighted=true;
+        if(std::distance(std::begin(queue), queueTop) == q){ 
             wattron(queueList, COLOR_PAIR(HOVERING));
-            mvwprintw(queueList,2*q+5,2,"%s",queuefptr);
+            mvwprintw(queueList,2*q+5,2,"%s",queuefstr.c_str());
             wattroff(queueList, COLOR_PAIR(HOVERING));
         }
-        else mvwprintw(queueList,2*q+5,2,"%s",queuefptr);
+        else mvwprintw(queueList,2*q+5,2,"%s",queuefstr.c_str());
+        
         wrefresh(queueList);
     }
         
@@ -232,6 +232,7 @@ void NompTUI::songListSelect()
         {
             case '\n':
             case KEY_ENTER:
+                if(files.empty()) break;
                 play(*currSong, "SoundFonts/HeartGold SoulSilver (WIP).sf2"); //path to file (wav, flac, mp3, etc)
                 listorqueue = false;
                 break;
@@ -249,6 +250,7 @@ void NompTUI::songListSelect()
                 break;
             case 'j':
                 //add to queue and play now
+                if(files.empty()) break;
                 queue.insert(queue.begin(), *currSong);
                 play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
                 //fluidSynthPlayer->play(*queueTop,"");
@@ -257,12 +259,14 @@ void NompTUI::songListSelect()
                 break;
             case 'k':
                 //play next
+                if(files.empty()) break;
                 if(queue.size()>0) queue.insert(queue.begin()+1, *currSong);
                 else queue.insert(queue.begin(), *currSong);
                 displayQueue();
                 continue;
             case 'l':
                 //push back
+                if(files.empty()) break;
                 queue.push_back(*currSong);
                 displayQueue();
                 continue;
@@ -326,6 +330,7 @@ void NompTUI::queueSelect()
                 queueTop=queue.begin();
                 wclear(queueList);
                 mpvPlayer->play("");
+                listorqueue=false;
             default:
                 continue;
         }
@@ -376,6 +381,26 @@ void NompTUI::selectWindow() // handle window selection
         queueTop=queue.begin();
         wclear(queueList);
         mpvPlayer->play("");
+        listorqueue = false;
+        break;
+    case ',':
+        mpvPlayer->seek("-5");
+        break;        
+    case '.':
+        mpvPlayer->seek("5");
+        break;
+    case '<':
+        wclear(queueList);
+        displayQueue();
+        if(queueTop!=queue.begin()) queueTop--;
+        play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+        break;
+    case '>':
+        wclear(queueList);
+        displayQueue();
+        if(queueTop!=queue.end()-1) queueTop++;
+        play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+        break;
     default:
         break;
     }
@@ -394,7 +419,6 @@ void NompTUI::displayMetadataOnTUI()
         {
             break;
         }
-        napms(50);
     }
     displayScreen();
     return;
