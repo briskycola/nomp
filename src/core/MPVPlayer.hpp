@@ -18,6 +18,7 @@ class MPVPlayer
         // mpv treats flags as an int, so
         // we will use an int.
         bool isPaused;
+        bool coreIdle;
     public:
         MPVPlayer();
         ~MPVPlayer();
@@ -25,4 +26,5 @@ class MPVPlayer
         bool stop();
         bool togglePause();
         bool seek(const std::string time);
+        bool isIdle();
 };

@@ -20,7 +20,7 @@ FluidSynthPlayer::FluidSynthPlayer()
 
     // Change the period size to 2048 to avoid
     // XRUNs on low-end hardware.
-    fluid_settings_setint(settings, "audio.period-size", 2048);
+    fluid_settings_setint(settings, "audio.period-size", 512);
 }
 
 FluidSynthPlayer::~FluidSynthPlayer()
