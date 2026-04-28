@@ -136,7 +136,7 @@ void NompTUI::displayQueue() //display contents of song list to songList
 {
     // for each song in files
     bool hasbeenhighlighted = false;
-    for(int q = 0; q<queue.size(); q++){
+    for(long unsigned int q = 0; q<queue.size(); q++){
         // print just the name on each descending
         // converting from path > string > const char*
         queuefstr = queue[q].filename().string();
@@ -144,10 +144,10 @@ void NompTUI::displayQueue() //display contents of song list to songList
         if(*queueTop==queue[q] && hasbeenhighlighted==false){
             hasbeenhighlighted=true;
             wattron(queueList, COLOR_PAIR(HOVERING));
-            mvwprintw(queueList,2*q+5,2,queuefptr);
+            mvwprintw(queueList,2*q+5,2,"%s",queuefptr);
             wattroff(queueList, COLOR_PAIR(HOVERING));
         }
-        else mvwprintw(queueList,2*q+5,2,queuefptr);
+        else mvwprintw(queueList,2*q+5,2,"%s",queuefptr);
         wrefresh(queueList);
     }
         
