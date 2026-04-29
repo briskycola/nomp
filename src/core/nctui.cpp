@@ -278,6 +278,7 @@ void NompTUI::songListSelect()
             case 'j':
                 //add to queue and play now
                 if(files.empty()) break;
+                if (queue.size() >= 20) break;
                 queue.insert(queue.begin(), *currSong);
                 play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
                 displayQueue();
@@ -285,14 +286,16 @@ void NompTUI::songListSelect()
                 break;
             case 'k':
                 //play next
-                if(files.empty()) break;
-                if(queue.size()>0) queue.insert(queue.begin()+1, *currSong);
+                if (files.empty()) break;
+                if (queue.size() >= 20) break;
+                if (queue.size()>0) queue.insert(queue.begin()+1, *currSong);
                 else queue.insert(queue.begin(), *currSong);
                 displayQueue();
                 continue;
             case 'l':
                 //push back
-                if(files.empty()) break;
+                if (files.empty()) break;
+                if (queue.size() >= 20) break;
                 queue.push_back(*currSong);
                 displayQueue();
                 continue;
