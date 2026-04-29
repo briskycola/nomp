@@ -59,7 +59,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://github.com/briskycola/nomp)
+<!-- [![Product Name Screen Shot][product-screenshot]](https://github.com/briskycola/nomp) -->
 
 NOMP (New Old Music Player) is a terminal-based music player written in C++, designed to run in UNIX terminals. It emulates the retro aesthetic of terminal programs from the 60s–80s while incorporating modern features like MIDI playback and SoundFont support.
 
