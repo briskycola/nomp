@@ -14,7 +14,7 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![project_license][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
+<!-- [![LinkedIn][linkedin-shield]][linkedin-url] -->
 
 
 
@@ -44,31 +44,16 @@
 
 
 <!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
+## Table of Contents
 
+1. [About The Project](#about-the-project)
+   - [Built With](#built-with)
+2. [Getting Started](#getting-started)
+3. [Usage](#usage)
+4. [License](#license)
+<!-- 4. [Contributing](#contributing) -->
+<!-- 5. [Contact](#contact) -->
+<!-- 6. [Acknowledgments](#acknowledgments) -->
 
 
 <!-- ABOUT THE PROJECT -->
@@ -127,71 +112,70 @@ _For more details, refer to the [Documentation](https://github.com/briskycola/no
 
 
 <!-- ROADMAP -->
-## Roadmap
-
-- [ ] Terminal UI (TUI)
-- [ ] Standard audio playback (MP3, WAV, FLAC) via libmpv
-- [ ] MIDI playback via libfluidsynth
-- [ ] SoundFont support for custom MIDI instruments
-- [ ] Audio filters
-- [ ] Future features
-
-See the [open issues](https://github.com/briskycola/nomp/issues) for a full list of proposed features and known issues.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<!-- ## Roadmap -->
+<!---->
+<!-- - [ ] Terminal UI (TUI) -->
+<!-- - [ ] Standard audio playback (MP3, WAV, FLAC) via libmpv -->
+<!-- - [ ] MIDI playback via libfluidsynth -->
+<!-- - [ ] SoundFont support for custom MIDI instruments -->
+<!-- - [ ] Audio filters -->
+<!-- - [ ] Future features -->
+<!---->
+<!-- See the [open issues](https://github.com/briskycola/nomp/issues) for a full list of proposed features and known issues. -->
+<!---->
+<!-- <p align="right">(<a href="#readme-top">back to top</a>)</p> -->
 
 
 
 <!-- CONTRIBUTING -->
-## Contributing
+<!-- ## Contributing -->
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-### Top contributors:
-
-<a href="https://github.com/briskycola/nomp/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=briskycola/nomp" alt="contrib.rocks image" />
-</a>
+<!-- Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**. -->
+<!---->
+<!-- If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement". -->
+<!-- Don't forget to give the project a star! Thanks again! -->
+<!---->
+<!-- 1. Fork the Project -->
+<!-- 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`) -->
+<!-- 3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`) -->
+<!-- 4. Push to the Branch (`git push origin feature/AmazingFeature`) -->
+<!-- 5. Open a Pull Request -->
 
 
 
 <!-- LICENSE -->
 ## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the GNU GPL v3 License. See `LICENSE.txt` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+## Top contributors:
+
+<a href="https://github.com/briskycola/nomp/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=briskycola/nomp" alt="contrib.rocks image" />
+</a>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 <!-- CONTACT -->
-## Contact
-
-Project Link: [https://github.com/briskycola/nomp](https://github.com/briskycola/nomp)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<!-- ## Contact -->
+<!---->
+<!-- Project Link: [https://github.com/briskycola/nomp](https://github.com/briskycola/nomp) -->
+<!---->
+<!-- <p align="right">(<a href="#readme-top">back to top</a>)</p> -->
 
 
 
 <!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
+<!-- ## Acknowledgments -->
+<!---->
+<!-- * [libmpv](https://mpv.io/) — audio playback engine -->
+<!-- * [libfluidsynth](https://www.fluidsynth.org/) — MIDI synthesizer -->
+<!-- * [Best-README-Template](https://github.com/othneildrew/Best-README-Template) -->
 
-* [libmpv](https://mpv.io/) — audio playback engine
-* [libfluidsynth](https://www.fluidsynth.org/) — MIDI synthesizer
-* [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<!-- <p align="right">(<a href="#readme-top">back to top</a>)</p> -->
 
 
 
