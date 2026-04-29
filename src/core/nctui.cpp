@@ -54,6 +54,7 @@ void NompTUI::initCurses()
 
     // Set terminal to half-delay mode
     halfdelay(1);
+    set_escdelay(25);
 
     // Gets rid of cursor
     curs_set(0);
@@ -61,18 +62,18 @@ void NompTUI::initCurses()
     // Initialize windows here
     songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength (up down), ylength (left right), xpos, ypos<>);
     currentlyPlaying = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
-    controlBar= newwin((LINES/3)+2,(COLS/2)-2, 2*(LINES/3)-1, (COLS/4)+1);
+    soundFontList = newwin((LINES/3)+2,(COLS/2)-2, 2*(LINES/3)-1, (COLS/4)+1);
     queueList = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
 
     // Allow windows to use keypad
     keypad(stdscr, TRUE);
     keypad(currentlyPlaying, TRUE);
     keypad(songList, TRUE);
-    keypad(controlBar, TRUE);
+    keypad(soundFontList, TRUE);
     keypad(queueList, TRUE);
 
     windows.push_back(songList);
-    windows.push_back(controlBar);
+    windows.push_back(soundFontList);
     windows.push_back(queueList);
 
     // Iterator at the start of vector
@@ -85,8 +86,10 @@ void NompTUI::initPlayer()
     getSongs = std::make_unique<GetSongs>();
     mpvPlayer = std::make_unique<MPVPlayer>();
     fluidSynthPlayer = std::make_unique<FluidSynthPlayer>();
-    files = getSongs->getSongFilePaths(); // All files in song folder
-    currentSong = files.begin(); //iterator for visual files
+    audioFiles = getSongs->getFilePaths("NompSongs");
+    soundFontfiles = getSongs->getFilePaths("SoundFonts");
+    currentSong = audioFiles.begin(); //iterator for visual files
+    currentSoundFont = soundFontfiles.begin();
     //queue = getSongs->getSongFilePaths(); //queue of next songs //Breaks for some reason?
     queue.reserve(20);
     queue = {}; 
@@ -114,11 +117,11 @@ void NompTUI::nextInQueue()
         displayQueue();
         queueTop++;
         if(queueTop == queue.end()) queueTop--;
-        play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+        play(*queueTop, *currentSoundFont);
     }
 }
 
-void NompTUI::play(const std::string &filename, const std::string &soundfont)
+void NompTUI::play(const std::string &audioFile, const std::string &soundFontFile)
 {
     // Stop MPV and FluidSynth players (if they are playing)
     mpvPlayer->stop();
@@ -133,15 +136,18 @@ void NompTUI::play(const std::string &filename, const std::string &soundfont)
     // If it's a regular audio file, activate MPV.
     //
     // MPV will handle the rest of the error checking internally.
-    if (fluidSynthPlayer->isValidFile(filename, soundfont))
+    if (fluidSynthPlayer->isValidMidi(audioFile))
     {
-        fluidSynthPlayer->play(filename, soundfont);
-        isFluidSynth = true;
+        if (fluidSynthPlayer->isValidSoundFont(soundFontFile))
+        {
+            fluidSynthPlayer->play(audioFile, soundFontFile);
+            isFluidSynth = true;
+        }
     }
 
     else
     {
-        mpvPlayer->play(filename);
+        mpvPlayer->play(audioFile);
         displayScreen();
         isFluidSynth = false;
     }
@@ -151,19 +157,18 @@ void NompTUI::play(const std::string &filename, const std::string &soundfont)
 void NompTUI::displaySongs() //display contents of song list to songList
 {
     // Get width of the window to truncate characters properly
-    int maxWidth = getmaxx(queueList);
+    int maxWidth = getmaxx(songList);
     int startX = 2;
     int properWidth = maxWidth - startX - 1;
     if (properWidth < 0) properWidth = 0;
 
-    // for each song in files
-    for (long unsigned int fi = 0; fi < files.size(); fi++)
+    for (long unsigned int fi = 0; fi < audioFiles.size(); fi++)
     {
         // print just the name on each descending
         // converting from path > string > const char*
-        filenameString = files[fi].filename().string();
+        std::string filenameString = audioFiles[fi].filename().string();
 
-        if (*currentSong == files[fi])
+        if (*currentSong == audioFiles[fi])
         {
             wattron(songList, COLOR_PAIR(NEUTRAL));
             mvwprintw(songList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
@@ -171,6 +176,32 @@ void NompTUI::displaySongs() //display contents of song list to songList
         }
 
         else mvwprintw(songList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
+        wrefresh(*currentWindow);
+    }
+}
+
+void NompTUI::displaySoundFonts() //display contents of song list to songList
+{
+    // Get width of the window to truncate characters properly
+    int maxWidth = getmaxx(soundFontList);
+    int startX = 2;
+    int properWidth = maxWidth - startX - 1;
+    if (properWidth < 0) properWidth = 0;
+
+    for (long unsigned int fi = 0; fi < soundFontfiles.size(); fi++)
+    {
+        // print just the name on each descending
+        // converting from path > string > const char*
+        std::string filenameString = soundFontfiles[fi].filename().string();
+
+        if (*currentSoundFont == soundFontfiles[fi])
+        {
+            wattron(soundFontList, COLOR_PAIR(NEUTRAL));
+            mvwprintw(soundFontList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
+            wattroff(soundFontList, COLOR_PAIR(NEUTRAL));
+        }
+
+        else mvwprintw(soundFontList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
         wrefresh(*currentWindow);
     }
 }
@@ -189,7 +220,7 @@ void NompTUI::displayQueue()
     {
         // Print just the name on each descending
         // converting from path > string > const char*
-        queuedSongString = queue[q].filename().string();
+        std::string queuedSongString = queue[q].filename().string();
 
         if (std::distance(std::begin(queue), queueTop) == (long int) q)
         { 
@@ -243,7 +274,7 @@ void NompTUI::displayScreen()
     mvwprintw(currentlyPlaying, 7, 2, "Date:           %-*.*s", maxWidth, maxWidth, date.empty() ? "N/A" : date.c_str());
     mvwprintw(currentlyPlaying, 8, 2, "Current Time:   %-*.*s", maxWidth, maxWidth, currentTime.empty() ? "N/A" : currentTime.c_str());
     mvwprintw(currentlyPlaying, 9, 2, "Total Time:     %-*.*s", maxWidth, maxWidth, totalTime.empty() ? "N/A" : totalTime.c_str());
-    mvwprintw(controlBar, 2, 10, "Control Bar");
+    mvwprintw(soundFontList, 2, 10, "SoundFonts");
     mvwprintw(queueList, 2, 10, "Queue");
 
     wattron(currentlyPlaying, COLOR_PAIR(NEUTRAL));
@@ -269,6 +300,7 @@ void NompTUI::displayScreen()
     }
     
     displaySongs();
+    displaySoundFonts();
     displayQueue();
     wrefresh(songList);
     wrefresh(queueList);
@@ -286,78 +318,129 @@ void NompTUI::songListSelect()
         wrefresh(*currentWindow);
         switch (getUserInput(*currentWindow))
         {
-            case '\n':
-            case KEY_ENTER:
-                if (files.empty()) break;
-                play(*currentSong, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+            case '\n': case KEY_ENTER:
+                if (audioFiles.empty()) break;
+                play(*currentSong, *currentSoundFont);
                 isQueue = false;
                 break;
+                
             case KEY_DOWN:
-                if (currentSong != files.end()-1) currentSong++;
+                if (currentSong != audioFiles.end()-1) currentSong++;
                 continue;
+
             case KEY_UP:
-                if (currentSong != files.begin()) currentSong--;  
+                if (currentSong != audioFiles.begin()) currentSong--;  
                 continue;
-            case KEY_RIGHT:
-            case 'd':
+
+            case KEY_RIGHT: case 'd':
                 currentWindow++;
-                wbkgd(songList,COLOR_PAIR(0));
+                wbkgd(songList, COLOR_PAIR(0));
                 displayScreen();
                 break;
+
             case 'j':
                 // Add to queue and play now
-                if (files.empty()) break;
+                if (audioFiles.empty()) break;
                 if (queue.size() >= 20) break;
                 queue.insert(queue.begin(), *currentSong);
-                play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+                play(*queueTop, *currentSoundFont);
                 displayQueue();
                 isQueue = true;
                 break;
+
             case 'k':
                 // Play next
-                if (files.empty()) break;
+                if (audioFiles.empty()) break;
                 if (queue.size() >= 20) break;
                 if (queue.size() > 0) queue.insert(queue.begin()+1, *currentSong);
                 else queue.insert(queue.begin(), *currentSong);
                 displayQueue();
                 continue;
+
             case 'l':
                 // Push back
-                if (files.empty()) break;
+                if (audioFiles.empty()) break;
                 if (queue.size() >= 20) break;
                 queue.push_back(*currentSong);
                 displayQueue();
                 continue;
-            default:
-                continue;
-        }
-        break;
-    }
-    wbkgd(*currentWindow,COLOR_PAIR(0));
-}
-
-
-// what happens when controlbar is selected
-void NompTUI::controlBarSelect()
-{
-    wbkgd(*currentWindow, COLOR_PAIR(3));
-    while(userInput != 127 && userInput != KEY_BACKSPACE && userInput!='\b')
-    {
-        switch (getUserInput(*currentWindow))
-        {
-            case 'p':
-                if (isFluidSynth) fluidSynthPlayer->togglePause();
-                else mpvPlayer->togglePause();
+            
             case ',':
                 if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
                 else mpvPlayer->seek("-5");
                 continue;
+
             case '.':
                 if (isFluidSynth) fluidSynthPlayer->seek(5.0);
                 else mpvPlayer->seek("5");
                 continue;
-            default:
+            
+            default: continue;
+        }
+        break;
+    }
+    wbkgd(*currentWindow, COLOR_PAIR(0));
+}
+
+
+// what happens when controlbar is selected
+void NompTUI::soundFontSelect()
+{
+    wbkgd(*currentWindow, COLOR_PAIR(3));
+    while(userInput != 127 && userInput != KEY_BACKSPACE && userInput!='\b')
+    {
+        displaySoundFonts();
+        wrefresh(*currentWindow);
+        switch (getUserInput(*currentWindow))
+        {
+            case '\n': case KEY_ENTER:
+                if (soundFontfiles.empty()) break;
+                if (fluidSynthPlayer->isValidSoundFont(*currentSoundFont))
+                {
+                    fluidSynthPlayer->loadSoundFont(*currentSoundFont);
+                }
+                break;
+                
+            case KEY_DOWN:
+                if (currentSoundFont != soundFontfiles.end()-1) currentSoundFont++;
                 continue;
+
+            case KEY_UP:
+                if (currentSoundFont != soundFontfiles.begin()) currentSoundFont--;  
+                continue;
+
+            case KEY_LEFT:
+                currentWindow--;
+                wbkgd(soundFontList, COLOR_PAIR(0));
+                displayScreen();
+                break;
+
+            case KEY_RIGHT:
+                currentWindow++;
+                wbkgd(soundFontList, COLOR_PAIR(0));
+                displayScreen();
+                break;
+
+            case 'd':
+                wbkgd(soundFontList, COLOR_PAIR(0));
+                displayScreen();
+                break;
+
+            case 'p':
+                if (isFluidSynth) fluidSynthPlayer->togglePause();
+                else mpvPlayer->togglePause();
+
+            case ',':
+                if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+                else mpvPlayer->seek("-5");
+                continue;
+
+            case '.':
+                if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+                else mpvPlayer->seek("5");
+                continue;
+
+            default: continue;
         }
         break;
     }
@@ -374,16 +457,16 @@ void NompTUI::queueSelect()
         switch (getUserInput(*currentWindow))
         {
             case KEY_LEFT:
-            case 'a':
                 currentWindow--;
                 wbkgd(queueList,COLOR_PAIR(0));
                 displayScreen();
                 break;
-            case '\n':
-            case KEY_ENTER:
-                play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+
+            case '\n': case KEY_ENTER:
+                play(*queueTop, *currentSoundFont);
                 isQueue = true;
                 break;
+
             case 'c':
                 queue.clear();
                 queueTop = queue.begin();
@@ -392,8 +475,18 @@ void NompTUI::queueSelect()
                 mpvPlayer->stop();
                 fluidSynthPlayer->stop();
                 isQueue = false;
-            default:
+
+            case ',':
+                if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+                else mpvPlayer->seek("-5");
                 continue;
+                
+            case '.':
+                if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+                else mpvPlayer->seek("5");
+                continue;
+            
+            default: continue;
         }
         break;
     }
@@ -421,7 +514,7 @@ void NompTUI::selectWindow()
             
         case '\n': // Enter pressed
             if (*currentWindow == songList) songListSelect(); 
-            else if (*currentWindow == controlBar) controlBarSelect();
+            else if (*currentWindow == soundFontList) soundFontSelect();
             else if (*currentWindow == queueList) queueSelect();
             else {}
             break;
@@ -454,17 +547,16 @@ void NompTUI::selectWindow()
             wclear(queueList);
             displayQueue();
             if(queueTop != queue.begin()) queueTop--;
-            play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+            play(*queueTop, *currentSoundFont);
             break;
 
         case '>':
             wclear(queueList);
             displayQueue();
             if(queueTop != queue.end()-1) queueTop++;
-            play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+            play(*queueTop, *currentSoundFont);
             break;
-
-        default:
-            break;
+        
+        default: break;
     }
 }

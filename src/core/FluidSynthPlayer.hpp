@@ -28,17 +28,16 @@ class FluidSynthPlayer
         // Preserve SoundFont ID
         // 0 = no SoundFont loaded
         int sfid;
-
-        // Bool variable to check if player
-        // is currently paused or not.
-        //fluid_player_status isPaused;
-       
+        
     public:
         FluidSynthPlayer();
         ~FluidSynthPlayer();
-        bool isValidFile(const std::string &midiFile, const std::string &soundfontFile);
+        //bool isValidFile(const std::string &midiFile, const std::string &soundFontFile);
+        bool isValidMidi(const std::string &midiFile);
+        bool isValidSoundFont(const std::string &soundFontFile);
         bool isIdle();
-        bool play(const std::string &midiFile, const std::string &soundfontFile);
+        int loadSoundFont(const std::string &soundFontFile);
+        bool play(const std::string &midiFile, const std::string &soundFontFile);
         bool stop();
         void seek(double time);
         bool togglePause();

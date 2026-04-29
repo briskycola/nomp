@@ -53,19 +53,15 @@ FluidSynthPlayer::~FluidSynthPlayer()
     }
 }
 
-bool FluidSynthPlayer::isValidFile(const std::string &midiFile, const std::string &soundfontFile)
+bool FluidSynthPlayer::isValidMidi(const std::string &midiFile)
 {
-    if (!fluid_is_soundfont(soundfontFile.c_str()))
-    {
-        std::cerr << "Could not load SoundFont file\n";
-        return false;
-    }
+    if (!fluid_is_midifile(midiFile.c_str())) return false;
+    return true;
+}
 
-    if (!fluid_is_midifile(midiFile.c_str()))
-    {
-        std::cerr << "Could not load MIDI file\n";
-        return false;
-    }
+bool FluidSynthPlayer::isValidSoundFont(const std::string &soundFontFile)
+{
+    if (!fluid_is_soundfont(soundFontFile.c_str())) return false;
     return true;
 }
 
@@ -76,11 +72,24 @@ bool FluidSynthPlayer::isIdle()
     else return false;
 }
 
-bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soundfontFile)
+int FluidSynthPlayer::loadSoundFont(const std::string &soundFontFile)
+{
+    if (sfid != 0)
+    {
+        fluid_synth_sfunload(synth, sfid, 1);
+        sfid = 0;
+    }
+
+    sfid = fluid_synth_sfload(synth, soundFontFile.c_str(), 1);
+    return sfid;
+}
+
+bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soundFontFile)
 {
     // Check if the user entered a valid
     // MIDI file and SoundFont file
-    if (!isValidFile(midiFile, soundfontFile)) return false;
+    if (!isValidMidi(midiFile)) return false;
+    if (!isValidSoundFont(soundFontFile)) return false;
 
     if (player)
     {
@@ -89,14 +98,15 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
         player = new_fluid_player(synth);
     }
 
-    if (sfid != 0)
-    {
-        fluid_synth_sfunload(synth, sfid, 1);
-        sfid = 0;
-    }
+    //if (sfid != 0)
+    //{
+    //    fluid_synth_sfunload(synth, sfid, 1);
+    //    sfid = 0;
+    //}
     
     // Load SoundFont and MIDI file
-    sfid = fluid_synth_sfload(synth, soundfontFile.c_str(), 1);
+    //sfid = fluid_synth_sfload(synth, soundFontFile.c_str(), 1);
+    sfid = loadSoundFont(soundFontFile.c_str());
     fluid_player_add(player, midiFile.c_str());
 
     // Start the synthesizer.

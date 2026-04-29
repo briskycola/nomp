@@ -1,8 +1,8 @@
 #include "nctui.hpp"
-#include "GetSongs.hpp"
+//#include "GetSongs.hpp"
 // #include <iostream>
-#include <vector>
-#include <filesystem>
+//#include <vector>
+//#include <filesystem>
 
 void display(NompTUI &tui)
 {
@@ -19,8 +19,8 @@ void display(NompTUI &tui)
 int main(int argc, char **argv)
 {
     NompTUI tui;
-    GetSongs gs;
-    std::vector<std::filesystem::path> files = gs.getSongFilePaths();
+    //GetSongs gs;
+    //std::vector<std::filesystem::path> files = gs.getFilePaths("NompSongs");
 
     // FluidSynth has a lot of error output
     // on Linux that is just pure noise. It's really

@@ -24,7 +24,7 @@ class NompTUI
         // Windows themsleves
         WINDOW *songList;
         WINDOW *currentlyPlaying;
-        WINDOW *controlBar;
+        WINDOW *soundFontList;
         WINDOW *queueList;
 
         // Smart pointers for audio backends
@@ -32,13 +32,14 @@ class NompTUI
         std::unique_ptr<MPVPlayer> mpvPlayer;
         std::unique_ptr<FluidSynthPlayer> fluidSynthPlayer;
 
-        std::string filenameString;
-        std::string queuedSongString;
-
     public:
         // Dynamic array of audio files in directory
-        std::vector<std::filesystem::path> files;
+        std::vector<std::filesystem::path> audioFiles;
         std::vector<std::filesystem::path>::iterator currentSong;
+
+        // Dynamic array of SoundFont files in directory
+        std::vector<std::filesystem::path> soundFontfiles;
+        std::vector<std::filesystem::path>::iterator currentSoundFont;
 
         // Dynamic array of audio files in queue
         std::vector<std::filesystem::path> queue;
@@ -52,6 +53,7 @@ class NompTUI
 
         // Display functions for TUI
         void displaySongs();
+        void displaySoundFonts();
         void displayQueue();
         void displayScreen();
         void deleteWindows();
@@ -59,7 +61,7 @@ class NompTUI
         // Media controls
         void songListSelect();
         void currPlaySelect();
-        void controlBarSelect();
+        void soundFontSelect();
         void nextInQueue();
         void queueSelect();
 
@@ -68,7 +70,7 @@ class NompTUI
         void selectWindow();
 
         // Audio Playback functions for TUI
-        void play(const std::string &filename, const std::string &soundfont);
+        void play(const std::string &audioFile, const std::string &soundFontFile);
         void togglePause();
  
 };
