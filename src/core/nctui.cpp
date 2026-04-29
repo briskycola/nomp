@@ -22,60 +22,79 @@
 #define NEUTRAL 2
 #define SELECTED 3
 
-//Initializing ncurses library tools
+// Used asynchronously to check if the window
+// needs to be resized
+volatile sig_atomic_t isResizeNeeded = false;
 
-volatile sig_atomic_t isResizeNeeded = false; //window resizing
-
+// Signal handler to handle SIGWINCH
 void handleSigwinch(int signal)
 {
     isResizeNeeded = true;
 }
 
-void NompTUI::initCurses() //initialize everything for ncurses
+// Initialize ncurses and all windows
+void NompTUI::initCurses()
 {
+    // Asynchronously check for SIGWINCH signal
     signal(SIGWINCH, handleSigwinch);
-    //setlocale(LC_ALL, "");
-    initscr(); //initializes ncurses
-    start_color(); //starts color
-    init_pair(HOVERING, COLOR_YELLOW, COLOR_MAGENTA); // color pair definition, change later, testing
+
+    // Set locale to UTF-8
+    setlocale(LC_ALL, "");
+    setlocale(LC_NUMERIC,"C");
+
+    // Initialize ncurses itself along with colors
+    initscr();
+    start_color();
+    init_pair(HOVERING, COLOR_YELLOW, COLOR_MAGENTA);
     init_pair(NEUTRAL, COLOR_CYAN, COLOR_BLACK);
     init_pair(SELECTED, COLOR_MAGENTA, COLOR_WHITE);
-    noecho(); //dont show user input
-    halfdelay(1);
-    curs_set(0); //gets rid of cursor
 
-    //initialize windows here
+    // Don't show user input
+    noecho();
+
+    // Set terminal to half-delay mode
+    halfdelay(1);
+    set_escdelay(25);
+
+    // Gets rid of cursor
+    curs_set(0);
+
+    // Initialize windows here
     songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength (up down), ylength (left right), xpos, ypos<>);
-    currPlay = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
-    controlBar= newwin((LINES/3)+2,(COLS/2)-2, 2*(LINES/3)-1, (COLS/4)+1);
+    currentlyPlaying = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
+    soundFontList = newwin((LINES/3)+2,(COLS/2)-2, 2*(LINES/3)-1, (COLS/4)+1);
     queueList = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
-    
-    keypad(stdscr, TRUE); //allows keypad
-    keypad(currPlay, TRUE);
+
+    // Allow windows to use keypad
+    keypad(stdscr, TRUE);
+    keypad(currentlyPlaying, TRUE);
     keypad(songList, TRUE);
-    keypad(controlBar, TRUE);
+    keypad(soundFontList, TRUE);
     keypad(queueList, TRUE);
 
     windows.push_back(songList);
-    windows.push_back(controlBar);
+    windows.push_back(soundFontList);
     windows.push_back(queueList);
-    
-    currWin = windows.begin(); //iterator at start of vector    
+
+    // Iterator at the start of vector
+    currentWindow = windows.begin();
 }
 
-//initializing MPV and Fluidsynth players
-void NompTUI::initPlayer() //initialize player references and variables
+// Initializing MPV and Fluidsynth players
+void NompTUI::initPlayer()
 {
     getSongs = std::make_unique<GetSongs>();
     mpvPlayer = std::make_unique<MPVPlayer>();
     fluidSynthPlayer = std::make_unique<FluidSynthPlayer>();
-    files = getSongs->getSongFilePaths(); // All files in song folder
-    currSong = files.begin(); //iterator for visual files
+    audioFiles = getSongs->getFilePaths("NompSongs");
+    soundFontfiles = getSongs->getFilePaths("SoundFonts");
+    currentSong = audioFiles.begin(); //iterator for visual files
+    currentSoundFont = soundFontfiles.begin();
     //queue = getSongs->getSongFilePaths(); //queue of next songs //Breaks for some reason?
     queue.reserve(20);
     queue = {}; 
     queueTop = queue.begin(); // iterator that points to the actual current song
-    listorqueue = false;
+    isQueue = false;
 }
 
 void NompTUI::nextInQueue()
@@ -89,27 +108,27 @@ void NompTUI::nextInQueue()
     else isIdle = mpvPlayer->isIdle();
 
     // Check if the queue is empty
-    if (queue.empty()) listorqueue = false;
+    if (queue.empty()) isQueue = false;
 
     // If the mpvplayer is idle, and the last song was played from the queue
-    if (isIdle && listorqueue)
+    if (isIdle && isQueue)
     {
         wclear(queueList);
         displayQueue();
         queueTop++;
         if(queueTop == queue.end()) queueTop--;
-        play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+        play(*queueTop, *currentSoundFont);
     }
 }
 
-void NompTUI::play(const std::string &filename, const std::string &soundfont)
+void NompTUI::play(const std::string &audioFile, const std::string &soundFontFile)
 {
     // Stop MPV and FluidSynth players (if they are playing)
     mpvPlayer->stop();
     fluidSynthPlayer->stop();
 
     // Clear metadata from the screen for new metadata
-    wclear(currPlay);
+    wclear(currentlyPlaying);
 
     // Check if the audio file is a MIDI file.
     //
@@ -117,16 +136,19 @@ void NompTUI::play(const std::string &filename, const std::string &soundfont)
     // If it's a regular audio file, activate MPV.
     //
     // MPV will handle the rest of the error checking internally.
-    if (fluidSynthPlayer->isValidFile(filename, soundfont))
+    if (fluidSynthPlayer->isValidMidi(audioFile))
     {
-        fluidSynthPlayer->play(filename, soundfont);
-        isFluidSynth = true;
+        if (fluidSynthPlayer->isValidSoundFont(soundFontFile))
+        {
+            fluidSynthPlayer->play(audioFile, soundFontFile);
+            isFluidSynth = true;
+        }
     }
 
     else
     {
-        mpvPlayer->play(filename);
-        displayMetadataOnTUI();
+        mpvPlayer->play(audioFile);
+        displayScreen();
         isFluidSynth = false;
     }
 }
@@ -135,28 +157,57 @@ void NompTUI::play(const std::string &filename, const std::string &soundfont)
 void NompTUI::displaySongs() //display contents of song list to songList
 {
     // Get width of the window to truncate characters properly
-    int maxWidth = getmaxx(queueList);
+    int maxWidth = getmaxx(songList);
     int startX = 2;
     int properWidth = maxWidth - startX - 1;
     if (properWidth < 0) properWidth = 0;
 
-    // for each song in files
-    for(long unsigned int fi = 0; fi<files.size(); fi++){
+    for (long unsigned int fi = 0; fi < audioFiles.size(); fi++)
+    {
         // print just the name on each descending
         // converting from path > string > const char*
-        filenamestr = files[fi].filename().string();
-        if(*currSong==files[fi]){
+        std::string filenameString = audioFiles[fi].filename().string();
+
+        if (*currentSong == audioFiles[fi])
+        {
             wattron(songList, COLOR_PAIR(NEUTRAL));
-            mvwprintw(songList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenamestr.c_str());
+            mvwprintw(songList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
             wattroff(songList, COLOR_PAIR(NEUTRAL));
         }
-        else mvwprintw(songList,2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenamestr.c_str());
-        wrefresh(*currWin);
+
+        else mvwprintw(songList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
+        wrefresh(*currentWindow);
     }
-        
 }
 
-void NompTUI::displayQueue() //display contents of song list to songList
+void NompTUI::displaySoundFonts() //display contents of song list to songList
+{
+    // Get width of the window to truncate characters properly
+    int maxWidth = getmaxx(soundFontList);
+    int startX = 2;
+    int properWidth = maxWidth - startX - 1;
+    if (properWidth < 0) properWidth = 0;
+
+    for (long unsigned int fi = 0; fi < soundFontfiles.size(); fi++)
+    {
+        // print just the name on each descending
+        // converting from path > string > const char*
+        std::string filenameString = soundFontfiles[fi].filename().string();
+
+        if (*currentSoundFont == soundFontfiles[fi])
+        {
+            wattron(soundFontList, COLOR_PAIR(NEUTRAL));
+            mvwprintw(soundFontList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
+            wattroff(soundFontList, COLOR_PAIR(NEUTRAL));
+        }
+
+        else mvwprintw(soundFontList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
+        wrefresh(*currentWindow);
+    }
+}
+
+// Display contents of song list to songList
+void NompTUI::displayQueue()
 {
     // Get width of the window to truncate characters properly
     int maxWidth = getmaxx(queueList);
@@ -164,32 +215,38 @@ void NompTUI::displayQueue() //display contents of song list to songList
     int properWidth = maxWidth - startX - 1;
     if (properWidth < 0) properWidth = 0;
 
-    //TODO: keeps highlighting multiple, previous fix would only highlight the first one
-    // for each song in files
-    for(long unsigned int q = 0; q<queue.size(); q++){
-        // print just the name on each descending
+    // TODO: keeps highlighting multiple, previous fix would only highlight the first one
+    for (long unsigned int q = 0; q < queue.size(); q++)
+    {
+        // Print just the name on each descending
         // converting from path > string > const char*
-        queuefstr = queue[q].filename().string();
-        if(std::distance(std::begin(queue), queueTop) == (long int) q){ 
+        std::string queuedSongString = queue[q].filename().string();
+
+        if (std::distance(std::begin(queue), queueTop) == (long int) q)
+        { 
             wattron(queueList, COLOR_PAIR(HOVERING));
-            mvwprintw(queueList,2*q+5,startX,"%-*.*s",properWidth-1, properWidth-1, queuefstr.c_str());
+            mvwprintw(queueList, 2*q+5, startX, "%-*.*s", properWidth-1, properWidth-1, queuedSongString.c_str());
             wattroff(queueList, COLOR_PAIR(HOVERING));
         }
-        else mvwprintw(queueList,2*q+5,startX,"%-*.*s",properWidth-1, properWidth-1, queuefstr.c_str());
+
+        else mvwprintw(queueList, 2*q+5, startX, "%-*.*s", properWidth-1, properWidth-1, queuedSongString.c_str());
         wrefresh(queueList);
     }
         
 }
 
-void NompTUI::deleteWindows() //delete windows
+// Delete windows
+void NompTUI::deleteWindows()
 {
     for (auto a : windows) { if (a) delwin(a); }
     windows.clear();
 }
 
-
-void NompTUI::displayScreen() // display and refresh screen
+// Display and refresh screen
+void NompTUI::displayScreen()
 {
+    // Re-create the TUI to change the window size
+    // when SIGWINCH is recieved
     if (isResizeNeeded)
     {
         endwin();
@@ -199,32 +256,35 @@ void NompTUI::displayScreen() // display and refresh screen
         isResizeNeeded = false;
     }
 
-    //function call to read songs off of folder/playlist here
-    //display text using mvwprintw([window], x, y
-    const std::string title = mpvPlayer ? mpvPlayer->getMetadata("title") : "";
-    const std::string artist = mpvPlayer ? mpvPlayer->getMetadata("artist") : "";
-    const std::string album = mpvPlayer ? mpvPlayer->getMetadata("album") : "";
-    
-    //function call to read songs off of folder/playlist here
-    //display text using mvwprintw([window], x, y
-    int maxWidth = getmaxx(currPlay);
-    mvwprintw(songList,2,10,"Song List");
-    mvwprintw(currPlay,2,(getmaxx(currPlay)/2)-9,"Currently Playing");
-    mvwprintw(currPlay,4,2,"Title:  %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
-    mvwprintw(currPlay,4,2,"Title:  %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
-    mvwprintw(currPlay,5,2,"Artist: %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
-    mvwprintw(currPlay,6,2,"Album:  %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
-    mvwprintw(controlBar,2,10,"Control Bar");
-    mvwprintw(queueList,2,10,"Queue");
+    // Retrieve metadata from MPV backend
+    const std::string title = mpvPlayer ? mpvPlayer->getProperty("metadata/title") : "";
+    const std::string artist = mpvPlayer ? mpvPlayer->getProperty("metadata/artist") : "";
+    const std::string album = mpvPlayer ? mpvPlayer->getProperty("metadata/album") : "";
+    const std::string date = mpvPlayer ? mpvPlayer->getProperty("metadata/date") : "";
+    const std::string currentTime = mpvPlayer ? mpvPlayer->getProperty("time-pos") : "";
+    const std::string totalTime = mpvPlayer ? mpvPlayer->getProperty("duration") : "";
 
-    wattron(currPlay,COLOR_PAIR(NEUTRAL));
-    box(currPlay,0,0);
-    wattroff(currPlay,COLOR_PAIR(NEUTRAL));
-    wrefresh(currPlay);
+    // Display all content to the TUI
+    int maxWidth = getmaxx(currentlyPlaying);
+    mvwprintw(songList, 2, 10, "Song List");
+    mvwprintw(currentlyPlaying, 2, (getmaxx(currentlyPlaying)/2)-9,"Currently Playing");
+    mvwprintw(currentlyPlaying, 4, 2, "Title:          %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
+    mvwprintw(currentlyPlaying, 5, 2, "Artist:         %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
+    mvwprintw(currentlyPlaying, 6, 2, "Album:          %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
+    mvwprintw(currentlyPlaying, 7, 2, "Date:           %-*.*s", maxWidth, maxWidth, date.empty() ? "N/A" : date.c_str());
+    mvwprintw(currentlyPlaying, 8, 2, "Current Time:   %-*.*s", maxWidth, maxWidth, currentTime.empty() ? "N/A" : currentTime.c_str());
+    mvwprintw(currentlyPlaying, 9, 2, "Total Time:     %-*.*s", maxWidth, maxWidth, totalTime.empty() ? "N/A" : totalTime.c_str());
+    mvwprintw(soundFontList, 2, 10, "SoundFonts");
+    mvwprintw(queueList, 2, 10, "Queue");
+
+    wattron(currentlyPlaying, COLOR_PAIR(NEUTRAL));
+    box(currentlyPlaying, 0, 0);
+    wattroff(currentlyPlaying, COLOR_PAIR(NEUTRAL));
+    wrefresh(currentlyPlaying);
     
     for (auto a : windows)
     {
-        if (a == *currWin)
+        if (a == *currentWindow)
         {
             wattron(a,COLOR_PAIR(1));
             box(a,0,0);
@@ -240,6 +300,7 @@ void NompTUI::displayScreen() // display and refresh screen
     }
     
     displaySongs();
+    displaySoundFonts();
     displayQueue();
     wrefresh(songList);
     wrefresh(queueList);
@@ -250,208 +311,252 @@ void NompTUI::displayScreen() // display and refresh screen
 // What happens when songList is selected
 void NompTUI::songListSelect() 
 {
-    wbkgd(*currWin,COLOR_PAIR(3));
-    while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
+    wbkgd(*currentWindow,COLOR_PAIR(3));
+    while(userInput != 127 && userInput != KEY_BACKSPACE && userInput != '\b')
     {
         displaySongs();
-        wrefresh(*currWin);
-        switch (getUserInput(*currWin))
+        wrefresh(*currentWindow);
+        switch (getUserInput(*currentWindow))
         {
-            case '\n':
-            case KEY_ENTER:
-                if(files.empty()) break;
-                play(*currSong, "SoundFonts/HeartGold SoulSilver (WIP).sf2"); //path to file (wav, flac, mp3, etc)
-                listorqueue = false;
+            case '\n': case KEY_ENTER:
+                if (audioFiles.empty()) break;
+                play(*currentSong, *currentSoundFont);
+                isQueue = false;
                 break;
+                
             case KEY_DOWN:
-                if(currSong!=files.end()-1) currSong++;
+                if (currentSong != audioFiles.end()-1) currentSong++;
                 continue;
+
             case KEY_UP:
-                if(currSong!=files.begin()) currSong--;  
+                if (currentSong != audioFiles.begin()) currentSong--;  
                 continue;
-            case KEY_RIGHT:
-            case 'd':
-                currWin++;
-                wbkgd(songList,COLOR_PAIR(0));
+
+            case KEY_RIGHT: case 'd':
+                currentWindow++;
+                wbkgd(songList, COLOR_PAIR(0));
                 displayScreen();
                 break;
+
             case 'j':
-                //add to queue and play now
-                if(files.empty()) break;
-                queue.insert(queue.begin(), *currSong);
-                play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+                // Add to queue and play now
+                if (audioFiles.empty()) break;
+                if (queue.size() >= 20) break;
+                queue.insert(queue.begin(), *currentSong);
+                play(*queueTop, *currentSoundFont);
                 displayQueue();
-                listorqueue = true;
+                isQueue = true;
                 break;
+
             case 'k':
-                //play next
-                if(files.empty()) break;
-                if(queue.size()>0) queue.insert(queue.begin()+1, *currSong);
-                else queue.insert(queue.begin(), *currSong);
+                // Play next
+                if (audioFiles.empty()) break;
+                if (queue.size() >= 20) break;
+                if (queue.size() > 0) queue.insert(queue.begin()+1, *currentSong);
+                else queue.insert(queue.begin(), *currentSong);
                 displayQueue();
                 continue;
+
             case 'l':
-                //push back
-                if(files.empty()) break;
-                queue.push_back(*currSong);
+                // Push back
+                if (audioFiles.empty()) break;
+                if (queue.size() >= 20) break;
+                queue.push_back(*currentSong);
                 displayQueue();
                 continue;
-            default:
-                continue;
-        }
-        break;
-    }
-    wbkgd(*currWin,COLOR_PAIR(0));
-}
-
-
-// what happens when controlbar is selected
-void NompTUI::controlBarSelect()
-{
-    wbkgd(*currWin,COLOR_PAIR(3));
-    while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
-    {
-        switch (getUserInput(*currWin))
-        {
-            case 'p':
-                if (isFluidSynth) fluidSynthPlayer->togglePause();
-                else mpvPlayer->togglePause();
+            
             case ',':
                 if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
                 else mpvPlayer->seek("-5");
                 continue;
+
             case '.':
                 if (isFluidSynth) fluidSynthPlayer->seek(5.0);
                 else mpvPlayer->seek("5");
                 continue;
-            default:
-                // wrefresh(*currWin);
-                continue;
+            
+            default: continue;
         }
         break;
     }
-    wbkgd(*currWin,COLOR_PAIR(0));
+    wbkgd(*currentWindow, COLOR_PAIR(0));
+}
+
+
+// what happens when controlbar is selected
+void NompTUI::soundFontSelect()
+{
+    wbkgd(*currentWindow, COLOR_PAIR(3));
+    while(userInput != 127 && userInput != KEY_BACKSPACE && userInput!='\b')
+    {
+        displaySoundFonts();
+        wrefresh(*currentWindow);
+        switch (getUserInput(*currentWindow))
+        {
+            case '\n': case KEY_ENTER:
+                if (soundFontfiles.empty()) break;
+                if (fluidSynthPlayer->isValidSoundFont(*currentSoundFont))
+                {
+                    fluidSynthPlayer->loadSoundFont(*currentSoundFont);
+                }
+                break;
+                
+            case KEY_DOWN:
+                if (currentSoundFont != soundFontfiles.end()-1) currentSoundFont++;
+                continue;
+
+            case KEY_UP:
+                if (currentSoundFont != soundFontfiles.begin()) currentSoundFont--;  
+                continue;
+
+            case KEY_LEFT:
+                currentWindow--;
+                wbkgd(soundFontList, COLOR_PAIR(0));
+                displayScreen();
+                break;
+
+            case KEY_RIGHT:
+                currentWindow++;
+                wbkgd(soundFontList, COLOR_PAIR(0));
+                displayScreen();
+                break;
+
+            case 'd':
+                wbkgd(soundFontList, COLOR_PAIR(0));
+                displayScreen();
+                break;
+
+            case 'p':
+                if (isFluidSynth) fluidSynthPlayer->togglePause();
+                else mpvPlayer->togglePause();
+
+            case ',':
+                if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+                else mpvPlayer->seek("-5");
+                continue;
+
+            case '.':
+                if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+                else mpvPlayer->seek("5");
+                continue;
+
+            default: continue;
+        }
+        break;
+    }
+    wbkgd(*currentWindow, COLOR_PAIR(0));
 }
 
 //what happens if settings is selected
 void NompTUI::queueSelect()
 {   
-    wbkgd(*currWin,COLOR_PAIR(3));
-    while(userInput!=127 && userInput!=KEY_BACKSPACE && userInput!='\b')
+    wbkgd(*currentWindow,COLOR_PAIR(3));
+    while (userInput != 127 && userInput != KEY_BACKSPACE && userInput != '\b')
     {
         displayQueue();
-        switch (getUserInput(*currWin))
+        switch (getUserInput(*currentWindow))
         {
             case KEY_LEFT:
-            case 'a':
-                currWin--;
+                currentWindow--;
                 wbkgd(queueList,COLOR_PAIR(0));
                 displayScreen();
                 break;
-            case '\n':
-            case KEY_ENTER:
-                play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
-                listorqueue = true;
+
+            case '\n': case KEY_ENTER:
+                play(*queueTop, *currentSoundFont);
+                isQueue = true;
                 break;
+
             case 'c':
                 queue.clear();
-                queueTop=queue.begin();
+                queueTop = queue.begin();
                 wclear(queueList);
-                displayMetadataOnTUI();
+                displayScreen();
                 mpvPlayer->stop();
                 fluidSynthPlayer->stop();
-                listorqueue=false;
-            default:
+                isQueue = false;
+
+            case ',':
+                if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+                else mpvPlayer->seek("-5");
                 continue;
+                
+            case '.':
+                if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+                else mpvPlayer->seek("5");
+                continue;
+            
+            default: continue;
         }
         break;
     }
-    wbkgd(*currWin,COLOR_PAIR(0));
+    wbkgd(*currentWindow, COLOR_PAIR(0));
 }
 
-int NompTUI::getUserInput(WINDOW *win) //get user input
+int NompTUI::getUserInput(WINDOW *win)
 {
     userInput = wgetch(win);
     return userInput;
 }
 
-void NompTUI::selectWindow() // handle window selection
+void NompTUI::selectWindow()
 {
-    userInput = getUserInput(*currWin);
+    userInput = getUserInput(*currentWindow);
     switch (userInput)
     {
-    case KEY_LEFT:
-        if(currWin!=windows.begin())
-        {
-            currWin--;
-        };
-        break;
-
-    case KEY_RIGHT:
-        if(currWin!=windows.end()-1)
-        {
-        currWin++;
-        };
-        break;
-        
-    case '\n': //enter pressed
-        if(*currWin==songList) songListSelect(); 
-        //else if(*currWin==currPlay) currPlaySelect();
-        else if(*currWin==controlBar) controlBarSelect();
-        else if(*currWin==queueList) queueSelect();
-        else {}
-        break;
-        
-    case 'p':
-        if (isFluidSynth) fluidSynthPlayer->togglePause();
-        else mpvPlayer->togglePause();
-        break;
-    case 'c':
-        queue.clear();
-        queueTop=queue.begin();
-        wclear(queueList);
-        mpvPlayer->play("");
-        listorqueue = false;
-        break;
-    case ',':
-        if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
-        else mpvPlayer->seek("-5");
-        break;        
-    case '.':
-        if (isFluidSynth) fluidSynthPlayer->seek(5.0);
-        else mpvPlayer->seek("5");
-        break;
-    case '<':
-        wclear(queueList);
-        displayQueue();
-        if(queueTop!=queue.begin()) queueTop--;
-        play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
-        break;
-    case '>':
-        wclear(queueList);
-        displayQueue();
-        if(queueTop!=queue.end()-1) queueTop++;
-        play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
-        break;
-    default:
-        break;
-    }
-}
-
-void NompTUI::displayMetadataOnTUI()
-{
-    wclear(currPlay);
-    for (int i = 0; i < 20; ++i)
-    {
-        const std::string title = mpvPlayer->getMetadata("title");
-        const std::string artist = mpvPlayer->getMetadata("artist");
-        const std::string album = mpvPlayer->getMetadata("album");
-
-        if (!title.empty() || !artist.empty() || !album.empty())
-        {
+        case KEY_LEFT:
+            if (currentWindow != windows.begin()) currentWindow--;
             break;
-        }
+
+        case KEY_RIGHT:
+            if (currentWindow!=windows.end()-1) currentWindow++;
+            break;
+            
+        case '\n': // Enter pressed
+            if (*currentWindow == songList) songListSelect(); 
+            else if (*currentWindow == soundFontList) soundFontSelect();
+            else if (*currentWindow == queueList) queueSelect();
+            else {}
+            break;
+            
+        case 'p':
+            if (isFluidSynth) fluidSynthPlayer->togglePause();
+            else mpvPlayer->togglePause();
+            break;
+
+        case 'c':
+            queue.clear();
+            queueTop=queue.begin();
+            wclear(queueList);
+            mpvPlayer->stop();
+            fluidSynthPlayer->stop();
+            isQueue = false;
+            break;
+
+        case ',':
+            if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+            else mpvPlayer->seek("-5");
+            break;
+            
+        case '.':
+            if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+            else mpvPlayer->seek("5");
+            break;
+
+        case '<':
+            wclear(queueList);
+            displayQueue();
+            if(queueTop != queue.begin()) queueTop--;
+            play(*queueTop, *currentSoundFont);
+            break;
+
+        case '>':
+            wclear(queueList);
+            displayQueue();
+            if(queueTop != queue.end()-1) queueTop++;
+            play(*queueTop, *currentSoundFont);
+            break;
+        
+        default: break;
     }
-    displayScreen();
-    return;
 }
