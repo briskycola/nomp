@@ -37,7 +37,9 @@ class FluidSynthPlayer
         FluidSynthPlayer();
         ~FluidSynthPlayer();
         bool isValidFile(const std::string &midiFile, const std::string &soundfontFile);
+        bool isIdle();
         bool play(const std::string &midiFile, const std::string &soundfontFile);
         bool stop();
+        void seek(double time);
         bool togglePause();
 };

@@ -1,4 +1,5 @@
 #include "FluidSynthPlayer.hpp"
+#include <fluidsynth/midi.h>
 #include <iostream>
 
 FluidSynthPlayer::FluidSynthPlayer()
@@ -68,6 +69,13 @@ bool FluidSynthPlayer::isValidFile(const std::string &midiFile, const std::strin
     return true;
 }
 
+bool FluidSynthPlayer::isIdle()
+{
+    status = (fluid_player_status) fluid_player_get_status(player);
+    if (status != FLUID_PLAYER_PLAYING) return true;
+    else return false;
+}
+
 bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soundfontFile)
 {
     // Check if the user entered a valid
@@ -117,9 +125,35 @@ bool FluidSynthPlayer::stop()
     return true;
 }
 
+void FluidSynthPlayer::seek(double time)
+{
+    // To seek in FluidSynth is much different compared to
+    // regular music files.
+    //
+    // Because MIDI music is entirely processed by the
+    // computer in real-time, we need to extract the
+    // tempo and division (meter) from the MIDI file itself:
+    //
+    // Tempo -> The speed of the song
+    // Division -> The meter of the song
+    int tempo = fluid_player_get_midi_tempo(player);
+    int division = fluid_player_get_division(player);
+
+    // Because FluidSynth works in ticks, we need to
+    // convert the ticks to seconds
+    double ticksPerSecond = (double) division * 1000000.0 / tempo;
+    int deltaTicks = (int) (time * ticksPerSecond);
+
+    // Get current tick, which represents the current point
+    // in time in the music
+    int currentTick = fluid_player_get_current_tick(player);
+    fluid_player_seek(player, currentTick + deltaTicks);
+}
+
 bool FluidSynthPlayer::togglePause()
 {
     // Pause music.
+    status = (fluid_player_status) fluid_player_get_status(player);
     if (status == FLUID_PLAYER_PLAYING)
     {
         fluid_player_stop(player);
