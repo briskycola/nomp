@@ -80,8 +80,19 @@ void NompTUI::initPlayer() //initialize player references and variables
 
 void NompTUI::nextInQueue()
 {
-    if(queue.empty()) listorqueue = false;
-    if(mpvPlayer->isIdle() && listorqueue) //if the mpvplayer is idle, and the last song was played from the queue
+    bool isIdle = false;
+
+    // If the next song in the queue is a MIDI file,
+    // check if FluidSynth is idle. Otherwise, check if
+    // MPV is idle
+    if (isFluidSynth) isIdle = fluidSynthPlayer->isIdle();
+    else isIdle = mpvPlayer->isIdle();
+
+    // Check if the queue is empty
+    if (queue.empty()) listorqueue = false;
+
+    // If the mpvplayer is idle, and the last song was played from the queue
+    if (isIdle && listorqueue)
     {
         wclear(queueList);
         displayQueue();
@@ -96,6 +107,9 @@ void NompTUI::play(const std::string &filename, const std::string &soundfont)
     // Stop MPV and FluidSynth players (if they are playing)
     mpvPlayer->stop();
     fluidSynthPlayer->stop();
+
+    // Clear metadata from the screen for new metadata
+    wclear(currPlay);
 
     // Check if the audio file is a MIDI file.
     //
@@ -120,6 +134,12 @@ void NompTUI::play(const std::string &filename, const std::string &soundfont)
 
 void NompTUI::displaySongs() //display contents of song list to songList
 {
+    // Get width of the window to truncate characters properly
+    int maxWidth = getmaxx(queueList);
+    int startX = 2;
+    int properWidth = maxWidth - startX - 1;
+    if (properWidth < 0) properWidth = 0;
+
     // for each song in files
     for(long unsigned int fi = 0; fi<files.size(); fi++){
         // print just the name on each descending
@@ -127,10 +147,10 @@ void NompTUI::displaySongs() //display contents of song list to songList
         filenamestr = files[fi].filename().string();
         if(*currSong==files[fi]){
             wattron(songList, COLOR_PAIR(NEUTRAL));
-            mvwprintw(songList, 2*fi+5, 2, "%s", filenamestr.c_str());
+            mvwprintw(songList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenamestr.c_str());
             wattroff(songList, COLOR_PAIR(NEUTRAL));
         }
-        else mvwprintw(songList,2*fi+5, 2, "%s", filenamestr.c_str());
+        else mvwprintw(songList,2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenamestr.c_str());
         wrefresh(*currWin);
     }
         
@@ -138,19 +158,24 @@ void NompTUI::displaySongs() //display contents of song list to songList
 
 void NompTUI::displayQueue() //display contents of song list to songList
 {
+    // Get width of the window to truncate characters properly
+    int maxWidth = getmaxx(queueList);
+    int startX = 2;
+    int properWidth = maxWidth - startX - 1;
+    if (properWidth < 0) properWidth = 0;
+
     //TODO: keeps highlighting multiple, previous fix would only highlight the first one
     // for each song in files
     for(long unsigned int q = 0; q<queue.size(); q++){
         // print just the name on each descending
         // converting from path > string > const char*
         queuefstr = queue[q].filename().string();
-        if(std::distance(std::begin(queue), queueTop) == q){ 
+        if(std::distance(std::begin(queue), queueTop) == (long int) q){ 
             wattron(queueList, COLOR_PAIR(HOVERING));
-            mvwprintw(queueList,2*q+5,2,"%s",queuefstr.c_str());
+            mvwprintw(queueList,2*q+5,startX,"%-*.*s",properWidth-1, properWidth-1, queuefstr.c_str());
             wattroff(queueList, COLOR_PAIR(HOVERING));
         }
-        else mvwprintw(queueList,2*q+5,2,"%s",queuefstr.c_str());
-        
+        else mvwprintw(queueList,2*q+5,startX,"%-*.*s",properWidth-1, properWidth-1, queuefstr.c_str());
         wrefresh(queueList);
     }
         
@@ -182,11 +207,13 @@ void NompTUI::displayScreen() // display and refresh screen
     
     //function call to read songs off of folder/playlist here
     //display text using mvwprintw([window], x, y
+    int maxWidth = getmaxx(currPlay);
     mvwprintw(songList,2,10,"Song List");
     mvwprintw(currPlay,2,(getmaxx(currPlay)/2)-9,"Currently Playing");
-    mvwprintw(currPlay,4,2,"Title:  %s", title.empty() ? "N/A" : title.c_str());
-    mvwprintw(currPlay,5,2,"Artist: %s", artist.empty() ? "N/A" : artist.c_str());
-    mvwprintw(currPlay,6,2,"Album:  %s", album.empty() ? "N/A" : album.c_str());
+    mvwprintw(currPlay,4,2,"Title:  %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
+    mvwprintw(currPlay,4,2,"Title:  %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
+    mvwprintw(currPlay,5,2,"Artist: %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
+    mvwprintw(currPlay,6,2,"Album:  %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
     mvwprintw(controlBar,2,10,"Control Bar");
     mvwprintw(queueList,2,10,"Queue");
 
@@ -253,7 +280,6 @@ void NompTUI::songListSelect()
                 if(files.empty()) break;
                 queue.insert(queue.begin(), *currSong);
                 play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
-                //fluidSynthPlayer->play(*queueTop,"");
                 displayQueue();
                 listorqueue = true;
                 break;
@@ -291,10 +317,12 @@ void NompTUI::controlBarSelect()
                 if (isFluidSynth) fluidSynthPlayer->togglePause();
                 else mpvPlayer->togglePause();
             case ',':
-                mpvPlayer->seek("-5");
+                if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+                else mpvPlayer->seek("-5");
                 continue;
             case '.':
-                mpvPlayer->seek("5");
+                if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+                else mpvPlayer->seek("5");
                 continue;
             default:
                 // wrefresh(*currWin);
@@ -329,7 +357,9 @@ void NompTUI::queueSelect()
                 queue.clear();
                 queueTop=queue.begin();
                 wclear(queueList);
-                mpvPlayer->play("");
+                displayMetadataOnTUI();
+                mpvPlayer->stop();
+                fluidSynthPlayer->stop();
                 listorqueue=false;
             default:
                 continue;
@@ -384,10 +414,12 @@ void NompTUI::selectWindow() // handle window selection
         listorqueue = false;
         break;
     case ',':
-        mpvPlayer->seek("-5");
+        if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+        else mpvPlayer->seek("-5");
         break;        
     case '.':
-        mpvPlayer->seek("5");
+        if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+        else mpvPlayer->seek("5");
         break;
     case '<':
         wclear(queueList);
