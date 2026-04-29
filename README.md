@@ -97,55 +97,11 @@ Whether you're a fan of terminal-based environments, running a low-resource syst
 <!-- GETTING STARTED -->
 ## Getting Started
 
-To get a local copy up and running, follow the steps below for your platform.
+To get a local copy up and running, follow the steps below depending on your platform.
 
-### Prerequisites
-
-NOMP requires the following libraries to be installed:
-
-* **libmpv** — for standard audio playback (MP3, WAV, FLAC, AAC, etc.)
-  * macOS:
-    ```sh
-    brew install mpv
-    ```
-  * Linux:
-    ```sh
-    sudo apt install libmpv-dev
-    ```
-
-* **libfluidsynth** — for MIDI playback and SoundFont support
-  * macOS:
-    ```sh
-    brew install fluid-synth
-    ```
-  * Linux:
-    ```sh
-    sudo apt install libfluidsynth-dev
-    ```
-
-### Installation
-
-1. Clone the repo
-   ```sh
-   git clone https://github.com/briskycola/nomp.git
-   ```
-2. Navigate into the project directory
-   ```sh
-   cd nomp
-   ```
-3. Build for your platform
-   * macOS:
-     ```sh
-     make -f Makefile.macos
-     ```
-   * Linux:
-     ```sh
-     make -f Makefile.linux
-     ```
-4. Run NOMP
-   ```sh
-   ./nomp
-   ```
+- [Linux](docs/BUILD_LINUX.md)
+- [macOS](docs/BUILD_MACOS.md)
+- [Windows](docs/BUILD_WINDOWS.md)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
