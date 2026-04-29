@@ -22,10 +22,10 @@
 <br />
 <div align="center">
   <a href="https://github.com/briskycola/nomp">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    <img src="docs/assets/images/nomp_banner.png" alt="Logo" width="400">
   </a>
 
-<h3 align="center">NOMP — New Old Music Player</h3>
+<!-- <h3 align="center">NOMP — New Old Music Player</h3> -->
 
   <p align="center">
     A terminal-based music player that brings the retro feel of 60s–80s terminal programs into the modern age.
