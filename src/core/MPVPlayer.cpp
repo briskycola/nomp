@@ -108,20 +108,16 @@ bool MPVPlayer::seek(const std::string time)
     return true;
 }
 
-std::string MPVPlayer::getMetadata(const std::string &key) const
+std::string MPVPlayer::getProperty(const std::string &key) const
 {
-    if (!mpvHandle)
-    {
-        return "";
-    }
+    // Return an empty string if MPV is not initialized
+    if (!mpvHandle) return "";
 
-    const std::string propertyName = "metadata/" + key;
-    char *value = mpv_get_property_string(mpvHandle, propertyName.c_str());
+    // Get the property associated with the key
+    char *value = mpv_get_property_string(mpvHandle, key.c_str());
 
-    if (!value)
-    {
-        return "";
-    }
+    // If there was no property, return an empty string
+    if (!value) return "";
 
     std::string metadataValue(value);
     mpv_free(value);
