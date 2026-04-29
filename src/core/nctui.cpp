@@ -80,13 +80,10 @@ void NompTUI::initPlayer() //initialize player references and variables
 
 void NompTUI::nextInQueue()
 {
-    bool isIdle = false;
-    if (isFluidSynth) isIdle = fluidSynthPlayer->isIdle();
-    else isIdle = mpvPlayer->isIdle();
-
-    if(isIdle && listorqueue) //if the mpvplayer is idle, and the last song was played from the queue
+    if(queue.empty()) listorqueue = false;
+    if(mpvPlayer->isIdle() && listorqueue) //if the mpvplayer is idle, and the last song was played from the queue
     {
-        //wclear(queueList);
+        wclear(queueList);
         displayQueue();
         queueTop++;
         if(queueTop == queue.end()) queueTop--;
@@ -99,10 +96,6 @@ void NompTUI::play(const std::string &filename, const std::string &soundfont)
     // Stop MPV and FluidSynth players (if they are playing)
     mpvPlayer->stop();
     fluidSynthPlayer->stop();
-
-    // Clear metadata from the screen for new
-    // metadata
-    wclear(currPlay);
 
     // Check if the audio file is a MIDI file.
     //
@@ -151,7 +144,7 @@ void NompTUI::displayQueue() //display contents of song list to songList
         // print just the name on each descending
         // converting from path > string > const char*
         queuefstr = queue[q].filename().string();
-        if(*queueTop==queue[q]){ 
+        if(std::distance(std::begin(queue), queueTop) == q){ 
             wattron(queueList, COLOR_PAIR(HOVERING));
             mvwprintw(queueList,2*q+5,2,"%s",queuefstr.c_str());
             wattroff(queueList, COLOR_PAIR(HOVERING));
@@ -239,6 +232,7 @@ void NompTUI::songListSelect()
         {
             case '\n':
             case KEY_ENTER:
+                if(files.empty()) break;
                 play(*currSong, "SoundFonts/HeartGold SoulSilver (WIP).sf2"); //path to file (wav, flac, mp3, etc)
                 listorqueue = false;
                 break;
@@ -256,19 +250,23 @@ void NompTUI::songListSelect()
                 break;
             case 'j':
                 //add to queue and play now
+                if(files.empty()) break;
                 queue.insert(queue.begin(), *currSong);
                 play(*queueTop, "SoundFonts/HeartGold SoulSilver (WIP).sf2");
+                //fluidSynthPlayer->play(*queueTop,"");
                 displayQueue();
                 listorqueue = true;
                 break;
             case 'k':
                 //play next
+                if(files.empty()) break;
                 if(queue.size()>0) queue.insert(queue.begin()+1, *currSong);
                 else queue.insert(queue.begin(), *currSong);
                 displayQueue();
                 continue;
             case 'l':
                 //push back
+                if(files.empty()) break;
                 queue.push_back(*currSong);
                 displayQueue();
                 continue;
@@ -293,12 +291,10 @@ void NompTUI::controlBarSelect()
                 if (isFluidSynth) fluidSynthPlayer->togglePause();
                 else mpvPlayer->togglePause();
             case ',':
-                if (fluidSynthPlayer) fluidSynthPlayer->seek(-5.0);
-                else mpvPlayer->seek("-5");
+                mpvPlayer->seek("-5");
                 continue;
             case '.':
-                if (fluidSynthPlayer) fluidSynthPlayer->seek(5.0);
-                else mpvPlayer->seek("5");
+                mpvPlayer->seek("5");
                 continue;
             default:
                 // wrefresh(*currWin);
@@ -384,17 +380,14 @@ void NompTUI::selectWindow() // handle window selection
         queue.clear();
         queueTop=queue.begin();
         wclear(queueList);
-        mpvPlayer->stop();
-        fluidSynthPlayer->stop();
+        mpvPlayer->play("");
         listorqueue = false;
         break;
     case ',':
-        if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
-        else mpvPlayer->seek("-5");
+        mpvPlayer->seek("-5");
         break;        
     case '.':
-        if (isFluidSynth) fluidSynthPlayer->seek(5.0);
-        else mpvPlayer->seek("5");
+        mpvPlayer->seek("5");
         break;
     case '<':
         wclear(queueList);
