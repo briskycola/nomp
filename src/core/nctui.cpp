@@ -4,15 +4,11 @@
 //#include "StartPlayer.hpp"
 //
 //       TODO:
-//       Dynamic window resizing
-//       Selection: Change to use directed graph to handle smooth use input
-//       Add more windows
 //       Use pads for screens that need to scroll
-//       Iterators become invalidated if a vector is resized.
-//       First song lags now, fix that
 // 
 #include "nctui.hpp"
 #include "GetSongs.hpp"
+#include <cstddef>
 #include <memory>
 #include <ncurses.h>
 #include <vector>
@@ -62,18 +58,21 @@ void NompTUI::initCurses()
     // Initialize windows here
     songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength (up down), ylength (left right), xpos, ypos<>);
     currentlyPlaying = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
-    soundFontList = newwin((LINES/3)+2,(COLS/2)-2, 2*(LINES/3)-1, (COLS/4)+1);
+    soundFontList = newwin((LINES/3)+2,(COLS/4), 2*(LINES/3)-1, (COLS/4));
+    settings = newwin((LINES/3)+2,(COLS/4), 2*(LINES/3)-1, (COLS/2));
     queueList = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
 
     // Allow windows to use keypad
     keypad(stdscr, TRUE);
     keypad(currentlyPlaying, TRUE);
     keypad(songList, TRUE);
+    keypad(settings, TRUE);
     keypad(soundFontList, TRUE);
     keypad(queueList, TRUE);
 
     windows.push_back(songList);
     windows.push_back(soundFontList);
+    windows.push_back(settings);
     windows.push_back(queueList);
 
     // Iterator at the start of vector
@@ -153,6 +152,21 @@ void NompTUI::play(const std::string &audioFile, const std::string &soundFontFil
     }
 }
 
+int NompTUI::statusBar() //returns int with remaining time representated as a fraction of the window size
+{
+    // get and convert timer from mpv to double
+    std::string currentTime = mpvPlayer ? mpvPlayer->getProperty("time-pos") : "0";
+    currentTime = currentTime=="" ? "0" : currentTime;
+    // get and convert remaining time from mpv to double
+    std::string totTime = mpvPlayer ? mpvPlayer->getProperty("duration") : "0";
+    totTime = totTime=="" ? "0" : totTime;
+    
+    // get current size of display window -2
+    int winSize = getmaxx(currentlyPlaying)-2;
+    
+    // math
+    return (std::stod(currentTime)/std::stod(totTime))*(winSize);    
+}
 
 void NompTUI::displaySongs() //display contents of song list to songList
 {
@@ -215,7 +229,6 @@ void NompTUI::displayQueue()
     int properWidth = maxWidth - startX - 1;
     if (properWidth < 0) properWidth = 0;
 
-    // TODO: keeps highlighting multiple, previous fix would only highlight the first one
     for (long unsigned int q = 0; q < queue.size(); q++)
     {
         // Print just the name on each descending
@@ -272,8 +285,9 @@ void NompTUI::displayScreen()
     mvwprintw(currentlyPlaying, 5, 2, "Artist:         %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
     mvwprintw(currentlyPlaying, 6, 2, "Album:          %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
     mvwprintw(currentlyPlaying, 7, 2, "Date:           %-*.*s", maxWidth, maxWidth, date.empty() ? "N/A" : date.c_str());
-    mvwprintw(currentlyPlaying, 8, 2, "Current Time:   %-*.*s", maxWidth, maxWidth, currentTime.empty() ? "N/A" : currentTime.c_str());
-    mvwprintw(currentlyPlaying, 9, 2, "Total Time:     %-*.*s", maxWidth, maxWidth, totalTime.empty() ? "N/A" : totalTime.c_str());
+    mvwprintw(currentlyPlaying, 14, (getmaxx(currentlyPlaying)/2)-14, "Current Time:   %-*.*s", maxWidth, maxWidth, currentTime.empty() ? "N/A" : currentTime.c_str());
+    mvwprintw(currentlyPlaying, 18, (getmaxx(currentlyPlaying)/2)-14, "Total Time:     %-*.*s", maxWidth, maxWidth, totalTime.empty() ? "N/A" : totalTime.c_str());
+    mvwprintw(settings, 2, 10, "Settings");
     mvwprintw(soundFontList, 2, 10, "SoundFonts");
     mvwprintw(queueList, 2, 10, "Queue");
 
@@ -299,11 +313,24 @@ void NompTUI::displayScreen()
         wrefresh(a);
     }
     
+    for (unsigned int a = 0; a<getmaxx(currentlyPlaying)-2; a++)
+    {
+        mvwaddch(currentlyPlaying, 16, a+1, '.');
+    }
+    
+    for (unsigned int a = 0; a<=statusBar();a++)
+    {
+        wattron(currentlyPlaying, COLOR_PAIR(SELECTED));
+        mvwaddch(currentlyPlaying, 16, a+1, '-');
+        wattroff(currentlyPlaying, COLOR_PAIR(SELECTED));
+    }
+
     displaySongs();
     displaySoundFonts();
     displayQueue();
     wrefresh(songList);
     wrefresh(queueList);
+    wrefresh(currentlyPlaying);
 }
 
 // Anything ending in "Select" should be interpreted as "Selected" and is what happens when each window is selected after pressing Enter
@@ -335,6 +362,16 @@ void NompTUI::songListSelect()
             case 'p':
                 if (isFluidSynth) fluidSynthPlayer->togglePause();
                 else mpvPlayer->togglePause();
+                break;
+                
+            case 'c':
+                queue.clear();
+                queueTop = queue.begin();
+                wclear(queueList);
+                displayScreen();
+                mpvPlayer->stop();
+                fluidSynthPlayer->stop();
+                isQueue = false;
                 break;
 
             case 'j':
@@ -428,6 +465,74 @@ void NompTUI::soundFontSelect()
             case 'p':
                 if (isFluidSynth) fluidSynthPlayer->togglePause();
                 else mpvPlayer->togglePause();
+                break;
+
+            case 'c':
+                queue.clear();
+                queueTop = queue.begin();
+                wclear(queueList);
+                displayScreen();
+                mpvPlayer->stop();
+                fluidSynthPlayer->stop();
+                isQueue = false;
+                break;
+
+            case ',':
+                if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+                else mpvPlayer->seek("-5");
+                break;
+
+            case '.':
+                if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+                else mpvPlayer->seek("5");
+                break;
+
+            case '<':
+                 wclear(queueList);
+                 displayQueue();
+                 if(queueTop != queue.begin()) queueTop--;
+                 play(*queueTop, *currentSoundFont);
+                 break;
+
+             case '>':
+                wclear(queueList);
+                displayQueue();
+                if(queueTop != queue.end()-1) queueTop++;
+                play(*queueTop, *currentSoundFont);
+                break;
+
+            default: break;
+        }
+}
+
+void NompTUI::settingSelect()
+{
+        switch (getUserInput(*currentWindow))
+        {                
+            case KEY_LEFT: case 'a':
+                currentWindow--;
+                displayScreen();
+                break;
+
+            case KEY_RIGHT: case 'd':
+                currentWindow++;
+                displayScreen();
+                break;
+
+            case 'p':
+                if (isFluidSynth) fluidSynthPlayer->togglePause();
+                else mpvPlayer->togglePause();
+                break;
+
+            case 'c':
+                queue.clear();
+                queueTop = queue.begin();
+                wclear(queueList);
+                displayScreen();
+                mpvPlayer->stop();
+                fluidSynthPlayer->stop();
+                isQueue = false;
+                break;
 
             case ',':
                 if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
@@ -486,6 +591,7 @@ void NompTUI::queueSelect()
                 mpvPlayer->stop();
                 fluidSynthPlayer->stop();
                 isQueue = false;
+                break;
 
             case ',':
                 if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
@@ -527,6 +633,7 @@ void NompTUI::selectWindow()
     if (*currentWindow == songList) songListSelect(); 
     else if (*currentWindow == soundFontList) soundFontSelect();
     else if (*currentWindow == queueList) queueSelect();
+    else if (*currentWindow == settings) settingSelect();
     else {}
             
 }
