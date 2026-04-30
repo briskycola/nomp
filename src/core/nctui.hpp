@@ -60,6 +60,7 @@ class NompTUI
         void displayQueue();
         void displayScreen();
         void deleteWindows();
+        void displaySettings();
 
         // Media controls
         void songListSelect();

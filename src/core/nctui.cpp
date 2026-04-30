@@ -333,8 +333,37 @@ void NompTUI::displayScreen()
     wrefresh(currentlyPlaying);
 }
 
-// Anything ending in "Select" should be interpreted as "Selected" and is what happens when each window is selected after pressing Enter
+void NompTUI::displaySettings()
+{
+    clear();
+     mvprintw(1,0," _____                                                            _____ ");
+     mvprintw(2,0,"( ___ )                                                          ( ___ )");
+     mvprintw(3,0," |   |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|   | ");
+     mvprintw(4,0," |   |  ██████   █████    ███████    ██████   ██████ ███████████  |   | ");
+     mvprintw(5,0," |   | ░░██████ ░░███   ███░░░░░███ ░░██████ ██████ ░░███░░░░░███ |   | ");
+     mvprintw(6,0," |   |  ░███░███ ░███  ███     ░░███ ░███░█████░███  ░███    ░███ |   | ");
+     mvprintw(7,0," |   |  ░███░░███░███ ░███      ░███ ░███░░███ ░███  ░██████████  |   | ");
+     mvprintw(8,0," |   |  ░███ ░░██████ ░███      ░███ ░███ ░░░  ░███  ░███░░░░░░   |   | ");
+     mvprintw(9,0," |   |  ░███  ░░█████ ░░███     ███  ░███      ░███  ░███         |   | ");
+    mvprintw(10,0," |   |  █████  ░░█████ ░░░███████░   █████     █████ █████        |   | ");
+    mvprintw(11,0," |   | ░░░░░    ░░░░░    ░░░░░░░    ░░░░░     ░░░░░ ░░░░░         |   | ");
+    mvprintw(12,0," |___|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|___| ");
+    mvprintw(13,0,"(_____)                                                          (_____)");
+    mvprintw(15,0, "Control Cheat Sheet:                              Contributers:");
+    mvprintw(17,0, "P - Pause song                                    Santiago Torres");
+    mvprintw(18,0, "C - Clear queue                                   Riley White");
+    mvprintw(19,0, "J - Add song to top of queue and play             Brandon Mercado");
+    mvprintw(20,0, "K - Play next                                     Jeremiah ");
+    mvprintw(21,0, "L - Add to end of queue                           Joseph Garcia");
+    mvprintw(22,0, ". - 5 seconds forward");
+    mvprintw(23,0, ", - 5 seconds back");
+    mvprintw(24,0, "> - Next song");
+    mvprintw(25,0, "< - Previous song");
+    mvprintw(27,0, "Press [e] to exit...");
+    refresh();
+}
 
+// Anything ending in "Select" should be interpreted as "Selected" and is what happens when each window is selected after pressing Enter
 // What happens when songList is selected
 void NompTUI::songListSelect() 
 {
@@ -516,7 +545,15 @@ void NompTUI::soundFontSelect()
 void NompTUI::settingSelect()
 {
         switch (getUserInput(*currentWindow))
-        {                
+        {
+            case KEY_ENTER: case '\n':
+                //open contributor page + help manuali
+                displaySettings();
+                while(getUserInput(*currentWindow)!='e'){}
+                clear();
+                refresh();
+                break;
+
             case KEY_LEFT: case 'a':
                 currentWindow--;
                 displayScreen();
