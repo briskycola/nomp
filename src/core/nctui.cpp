@@ -311,11 +311,6 @@ void NompTUI::displayScreen()
 // What happens when songList is selected
 void NompTUI::songListSelect() 
 {
-    wbkgd(*currentWindow,COLOR_PAIR(3));
-    while(userInput != 127 && userInput != KEY_BACKSPACE && userInput != '\b')
-    {
-        displaySongs();
-        wrefresh(*currentWindow);
         switch (getUserInput(*currentWindow))
         {
             case '\n': case KEY_ENTER:
@@ -326,16 +321,20 @@ void NompTUI::songListSelect()
                 
             case KEY_DOWN:
                 if (currentSong != audioFiles.end()-1) currentSong++;
-                continue;
+                break;
 
             case KEY_UP:
                 if (currentSong != audioFiles.begin()) currentSong--;  
-                continue;
+                break;
 
             case KEY_RIGHT: case 'd':
                 currentWindow++;
-                wbkgd(songList, COLOR_PAIR(0));
                 displayScreen();
+                break;
+
+            case 'p':
+                if (isFluidSynth) fluidSynthPlayer->togglePause();
+                else mpvPlayer->togglePause();
                 break;
 
             case 'j':
@@ -355,7 +354,7 @@ void NompTUI::songListSelect()
                 if (queue.size() > 0) queue.insert(queue.begin()+1, *currentSong);
                 else queue.insert(queue.begin(), *currentSong);
                 displayQueue();
-                continue;
+                break;
 
             case 'l':
                 // Push back
@@ -363,34 +362,41 @@ void NompTUI::songListSelect()
                 if (queue.size() >= 20) break;
                 queue.push_back(*currentSong);
                 displayQueue();
-                continue;
+                break;
             
             case ',':
                 if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
                 else mpvPlayer->seek("-5");
-                continue;
+                break;
 
             case '.':
                 if (isFluidSynth) fluidSynthPlayer->seek(5.0);
                 else mpvPlayer->seek("5");
-                continue;
-            
-            default: continue;
-        }
-        break;
+                break;
+                
+            case '<':
+                 wclear(queueList);
+                 displayQueue();
+                 if(queueTop != queue.begin()) queueTop--;
+                 play(*queueTop, *currentSoundFont);
+                 break;
+
+             case '>':
+                wclear(queueList);
+                displayQueue();
+                if(queueTop != queue.end()-1) queueTop++;
+                play(*queueTop, *currentSoundFont);
+                break;
+                                
+            default:
+                break;
     }
-    wbkgd(*currentWindow, COLOR_PAIR(0));
 }
 
 
 // what happens when controlbar is selected
 void NompTUI::soundFontSelect()
 {
-    wbkgd(*currentWindow, COLOR_PAIR(3));
-    while(userInput != 127 && userInput != KEY_BACKSPACE && userInput!='\b')
-    {
-        displaySoundFonts();
-        wrefresh(*currentWindow);
         switch (getUserInput(*currentWindow))
         {
             case '\n': case KEY_ENTER:
@@ -403,26 +409,19 @@ void NompTUI::soundFontSelect()
                 
             case KEY_DOWN:
                 if (currentSoundFont != soundFontfiles.end()-1) currentSoundFont++;
-                continue;
+                break;
 
             case KEY_UP:
                 if (currentSoundFont != soundFontfiles.begin()) currentSoundFont--;  
-                continue;
+                break;
 
-            case KEY_LEFT:
+            case KEY_LEFT: case 'a':
                 currentWindow--;
-                wbkgd(soundFontList, COLOR_PAIR(0));
                 displayScreen();
                 break;
 
-            case KEY_RIGHT:
+            case KEY_RIGHT: case 'd':
                 currentWindow++;
-                wbkgd(soundFontList, COLOR_PAIR(0));
-                displayScreen();
-                break;
-
-            case 'd':
-                wbkgd(soundFontList, COLOR_PAIR(0));
                 displayScreen();
                 break;
 
@@ -433,27 +432,34 @@ void NompTUI::soundFontSelect()
             case ',':
                 if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
                 else mpvPlayer->seek("-5");
-                continue;
+                break;
 
             case '.':
                 if (isFluidSynth) fluidSynthPlayer->seek(5.0);
                 else mpvPlayer->seek("5");
-                continue;
+                break;
 
-            default: continue;
+            case '<':
+                 wclear(queueList);
+                 displayQueue();
+                 if(queueTop != queue.begin()) queueTop--;
+                 play(*queueTop, *currentSoundFont);
+                 break;
+
+             case '>':
+                wclear(queueList);
+                displayQueue();
+                if(queueTop != queue.end()-1) queueTop++;
+                play(*queueTop, *currentSoundFont);
+                break;
+
+            default: break;
         }
-        break;
-    }
-    wbkgd(*currentWindow, COLOR_PAIR(0));
 }
 
 //what happens if settings is selected
 void NompTUI::queueSelect()
 {   
-    wbkgd(*currentWindow,COLOR_PAIR(3));
-    while (userInput != 127 && userInput != KEY_BACKSPACE && userInput != '\b')
-    {
-        displayQueue();
         switch (getUserInput(*currentWindow))
         {
             case KEY_LEFT:
@@ -465,6 +471,11 @@ void NompTUI::queueSelect()
             case '\n': case KEY_ENTER:
                 play(*queueTop, *currentSoundFont);
                 isQueue = true;
+                break;
+
+            case 'p':
+                if (isFluidSynth) fluidSynthPlayer->togglePause();
+                else mpvPlayer->togglePause();
                 break;
 
             case 'c':
@@ -479,18 +490,30 @@ void NompTUI::queueSelect()
             case ',':
                 if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
                 else mpvPlayer->seek("-5");
-                continue;
+                break;
                 
             case '.':
                 if (isFluidSynth) fluidSynthPlayer->seek(5.0);
                 else mpvPlayer->seek("5");
-                continue;
+                break;
+                
+            case '<':
+                 wclear(queueList);
+                 displayQueue();
+                 if(queueTop != queue.begin()) queueTop--;
+                 play(*queueTop, *currentSoundFont);
+                 break;
+
+             case '>':
+                wclear(queueList);
+                displayQueue();
+                if(queueTop != queue.end()-1) queueTop++;
+                play(*queueTop, *currentSoundFont);
+                break;
             
-            default: continue;
+            default:
+                break;
         }
-        break;
-    }
-    wbkgd(*currentWindow, COLOR_PAIR(0));
 }
 
 int NompTUI::getUserInput(WINDOW *win)
@@ -501,62 +524,9 @@ int NompTUI::getUserInput(WINDOW *win)
 
 void NompTUI::selectWindow()
 {
-    userInput = getUserInput(*currentWindow);
-    switch (userInput)
-    {
-        case KEY_LEFT:
-            if (currentWindow != windows.begin()) currentWindow--;
-            break;
-
-        case KEY_RIGHT:
-            if (currentWindow!=windows.end()-1) currentWindow++;
-            break;
+    if (*currentWindow == songList) songListSelect(); 
+    else if (*currentWindow == soundFontList) soundFontSelect();
+    else if (*currentWindow == queueList) queueSelect();
+    else {}
             
-        case '\n': // Enter pressed
-            if (*currentWindow == songList) songListSelect(); 
-            else if (*currentWindow == soundFontList) soundFontSelect();
-            else if (*currentWindow == queueList) queueSelect();
-            else {}
-            break;
-            
-        case 'p':
-            if (isFluidSynth) fluidSynthPlayer->togglePause();
-            else mpvPlayer->togglePause();
-            break;
-
-        case 'c':
-            queue.clear();
-            queueTop=queue.begin();
-            wclear(queueList);
-            mpvPlayer->stop();
-            fluidSynthPlayer->stop();
-            isQueue = false;
-            break;
-
-        case ',':
-            if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
-            else mpvPlayer->seek("-5");
-            break;
-            
-        case '.':
-            if (isFluidSynth) fluidSynthPlayer->seek(5.0);
-            else mpvPlayer->seek("5");
-            break;
-
-        case '<':
-            wclear(queueList);
-            displayQueue();
-            if(queueTop != queue.begin()) queueTop--;
-            play(*queueTop, *currentSoundFont);
-            break;
-
-        case '>':
-            wclear(queueList);
-            displayQueue();
-            if(queueTop != queue.end()-1) queueTop++;
-            play(*queueTop, *currentSoundFont);
-            break;
-        
-        default: break;
-    }
 }
