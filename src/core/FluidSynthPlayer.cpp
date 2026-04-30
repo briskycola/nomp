@@ -10,6 +10,7 @@ FluidSynthPlayer::FluidSynthPlayer()
 
     audioDriver = nullptr;
     sfid = 0;
+    isReverb = false;
     status = (fluid_player_status) fluid_player_get_status(player);
 
     // Disable all logging from FluidSynth
@@ -19,9 +20,11 @@ FluidSynthPlayer::FluidSynthPlayer()
     fluid_set_log_function(FLUID_INFO, NULL, NULL);
     fluid_set_log_function(FLUID_DBG, NULL, NULL);
 
-    // Change the period size to 2048 to avoid
-    // XRUNs on low-end hardware.
+    // Change the period size to 512
     fluid_settings_setint(settings, "audio.period-size", 512);
+
+    // Change the synth gain to 0.5
+    fluid_settings_setnum(settings, "synth.gain", 0.5);
 }
 
 FluidSynthPlayer::~FluidSynthPlayer()
@@ -127,6 +130,7 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
 
 bool FluidSynthPlayer::stop()
 {
+    // Disable reverb
     // Stop FluidSynth, but don't destroy the instance
     fluid_player_stop(player);
     fluid_player_join(player);
@@ -158,6 +162,29 @@ void FluidSynthPlayer::seek(double time)
     // in time in the music
     int currentTick = fluid_player_get_current_tick(player);
     fluid_player_seek(player, currentTick + deltaTicks);
+}
+
+void FluidSynthPlayer::reverb()
+{
+    if (!isReverb)
+    {
+        // Apply reverb settings
+        fluid_settings_setnum(settings, "synth.reverb.damp", 0.6);
+        fluid_settings_setnum(settings, "synth.reverb.level", 1.0);
+        fluid_settings_setnum(settings, "synth.reverb.room-size", 1.0);
+        fluid_settings_setnum(settings, "synth.reverb.width", 3.0);
+        isReverb = true;
+    }
+
+    else
+    {
+        // Go back to default settings
+        fluid_settings_setnum(settings, "synth.reverb.damp", 0.3);
+        fluid_settings_setnum(settings, "synth.reverb.level", 0.7);
+        fluid_settings_setnum(settings, "synth.reverb.room-size", 0.5);
+        fluid_settings_setnum(settings, "synth.reverb.width", 0.8);
+        isReverb = false;
+    }
 }
 
 bool FluidSynthPlayer::togglePause()
