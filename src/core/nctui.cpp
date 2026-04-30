@@ -477,6 +477,7 @@ void NompTUI::queueSelect()
                 break;
 
             case '\n': case KEY_ENTER:
+                if (queue.size() == 0) break;
                 play(*queueTop, *currentSoundFont);
                 isQueue = true;
                 break;
