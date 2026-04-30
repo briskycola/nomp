@@ -332,6 +332,10 @@ void NompTUI::songListSelect()
                 displayScreen();
                 break;
 
+            case 'r':
+                if (isFluidSynth) fluidSynthPlayer->reverb();
+                break;
+
             case 'p':
                 if (isFluidSynth) fluidSynthPlayer->togglePause();
                 else mpvPlayer->togglePause();
@@ -425,6 +429,10 @@ void NompTUI::soundFontSelect()
                 displayScreen();
                 break;
 
+            case 'r':
+                if (isFluidSynth) fluidSynthPlayer->reverb();
+                break;
+
             case 'p':
                 if (isFluidSynth) fluidSynthPlayer->togglePause();
                 else mpvPlayer->togglePause();
@@ -472,7 +480,11 @@ void NompTUI::queueSelect()
                 play(*queueTop, *currentSoundFont);
                 isQueue = true;
                 break;
-
+                
+            case 'r':
+                if (isFluidSynth) fluidSynthPlayer->reverb();
+                break;
+                
             case 'p':
                 if (isFluidSynth) fluidSynthPlayer->togglePause();
                 else mpvPlayer->togglePause();

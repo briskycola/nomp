@@ -28,6 +28,10 @@ class FluidSynthPlayer
         // Preserve SoundFont ID
         // 0 = no SoundFont loaded
         int sfid;
+
+        // Boolean that holds whether or
+        // not reverb is being applied
+        bool isReverb;
         
     public:
         FluidSynthPlayer();
@@ -40,5 +44,6 @@ class FluidSynthPlayer
         bool play(const std::string &midiFile, const std::string &soundFontFile);
         bool stop();
         void seek(double time);
+        void reverb();
         bool togglePause();
 };
