@@ -15,8 +15,10 @@
 #include "GetSongs.hpp"
 #include <memory>
 #include <ncurses.h>
+#include <ostream>
 #include <vector>
 #include <csignal>
+#include <sstream>
 
 #define HOVERING 1
 #define NEUTRAL 2
@@ -242,6 +244,19 @@ void NompTUI::deleteWindows()
     windows.clear();
 }
 
+// Convert seconds to corresponding minutes and seconds
+std::string prettyPrintTime(int totalSeconds)
+{
+    int minutes = totalSeconds / 60;
+    int seconds = totalSeconds % 60;
+
+    // MM:SS Format
+    std::ostringstream oss;
+    // Pad seconds with a 0 in front if less than 10 (e.g. 00:04)
+    oss << minutes << ":" << (seconds < 10 ? "0" : "") << seconds;
+    return oss.str();
+}
+
 // Display and refresh screen
 void NompTUI::displayScreen()
 {
@@ -264,6 +279,10 @@ void NompTUI::displayScreen()
     const std::string currentTime = mpvPlayer ? mpvPlayer->getProperty("time-pos") : "";
     const std::string totalTime = mpvPlayer ? mpvPlayer->getProperty("duration") : "";
 
+    // Convert current and total time seconds into MM:SS format
+    std::string currentTimeFormatted = currentTime.empty() ? "N/A" : prettyPrintTime(std::stoi(currentTime));
+    std::string totalTimeFormatted = totalTime.empty() ? "N/A" : prettyPrintTime(std::stoi(totalTime));
+
     // Display all content to the TUI
     int maxWidth = getmaxx(currentlyPlaying);
     mvwprintw(songList, 2, 10, "Song List");
@@ -272,8 +291,8 @@ void NompTUI::displayScreen()
     mvwprintw(currentlyPlaying, 5, 2, "Artist:         %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
     mvwprintw(currentlyPlaying, 6, 2, "Album:          %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
     mvwprintw(currentlyPlaying, 7, 2, "Date:           %-*.*s", maxWidth, maxWidth, date.empty() ? "N/A" : date.c_str());
-    mvwprintw(currentlyPlaying, 8, 2, "Current Time:   %-*.*s", maxWidth, maxWidth, currentTime.empty() ? "N/A" : currentTime.c_str());
-    mvwprintw(currentlyPlaying, 9, 2, "Total Time:     %-*.*s", maxWidth, maxWidth, totalTime.empty() ? "N/A" : totalTime.c_str());
+    mvwprintw(currentlyPlaying, 8, 2, "Current Time:   %-*.*s", maxWidth, maxWidth, currentTimeFormatted.c_str());
+    mvwprintw(currentlyPlaying, 9, 2, "Total Time:     %-*.*s", maxWidth, maxWidth, totalTimeFormatted.c_str());
     mvwprintw(soundFontList, 2, 10, "SoundFonts");
     mvwprintw(queueList, 2, 10, "Queue");
 
