@@ -372,6 +372,8 @@ void NompTUI::displayScreen()
     const std::string artist = mpvPlayer ? mpvPlayer->getProperty("metadata/artist") : "";
     const std::string album = mpvPlayer ? mpvPlayer->getProperty("metadata/album") : "";
     const std::string date = mpvPlayer ? mpvPlayer->getProperty("metadata/date") : "";
+    const std::string codec = mpvPlayer ? mpvPlayer->getProperty("audio-codec") : "";
+    const std::string ao = mpvPlayer ? mpvPlayer->getProperty("current-ao") : "";
     const std::string currentTime = mpvPlayer ? mpvPlayer->getProperty("time-pos") : "";
     const std::string totalTime = mpvPlayer ? mpvPlayer->getProperty("duration") : "";
 
@@ -396,18 +398,21 @@ void NompTUI::displayScreen()
 
     if (!isFluidSynth)
     {
-        mvwprintw(currentlyPlaying, 4, 2, "Title:          %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
-        mvwprintw(currentlyPlaying, 5, 2, "Artist:         %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
-        mvwprintw(currentlyPlaying, 6, 2, "Album:          %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
-        mvwprintw(currentlyPlaying, 7, 2, "Date:           %-*.*s", maxWidth, maxWidth, date.empty() ? "N/A" : date.c_str());
-        mvwprintw(currentlyPlaying, 8, 2, "Current Time:   %-*.*s", maxWidth, maxWidth, currentTimeFormatted.c_str());
-        mvwprintw(currentlyPlaying, 9, 2, "Total Time:     %-*.*s", maxWidth, maxWidth, totalTimeFormatted.c_str());
+        mvwprintw(currentlyPlaying, 4, 2, "Title:               %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
+        mvwprintw(currentlyPlaying, 5, 2, "Artist:              %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
+        mvwprintw(currentlyPlaying, 6, 2, "Album:               %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
+        mvwprintw(currentlyPlaying, 7, 2, "Date:                %-*.*s", maxWidth, maxWidth, date.empty() ? "N/A" : date.c_str());
+        mvwprintw(currentlyPlaying, 8, 2, "Codec:               %-*.*s", maxWidth, maxWidth, codec.empty() ? "N/A" : codec.c_str());
+        mvwprintw(currentlyPlaying, 9, 2, "Audio API:           %-*.*s", maxWidth, maxWidth, ao.empty() ? "N/A" : ao.c_str());
+        mvwprintw(currentlyPlaying, 10, 2, "Current Time:        %-*.*s", maxWidth, maxWidth, currentTimeFormatted.c_str());
+        mvwprintw(currentlyPlaying, 11, 2, "Total Time:          %-*.*s", maxWidth, maxWidth, totalTimeFormatted.c_str());
     }
 
     else
     {
-        mvwprintw(currentlyPlaying, 4, 2, "Current Tick:   %d", currentTick);
-        mvwprintw(currentlyPlaying, 5, 2, "Total Ticks:    %d", totalTicks);
+        mvwprintw(currentlyPlaying, 4, 2, "Codec:          %s", "MIDI");
+        mvwprintw(currentlyPlaying, 5, 2, "Current Tick:   %d", currentTick);
+        mvwprintw(currentlyPlaying, 6, 2, "Total Ticks:    %d", totalTicks);
     }
 
     mvwprintw(about, 2, 10, "About NOMP");
