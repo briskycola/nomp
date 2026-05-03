@@ -58,19 +58,28 @@ void NompTUI::initCurses()
     // Don't show user input
     noecho();
 
-    // Set terminal to half-delay mode
-    halfdelay(1);
+    // Set delay for ESC key to 25 ms
     set_escdelay(25);
 
     // Gets rid of cursor
     curs_set(0);
 
+    // Define layout grid for ncurses
+    int top = 1;
+    int bottom = LINES - 1;
+    int left = 0;
+    int right = COLS;
+    int columnOne = COLS / 4;
+    int columnTwo = COLS / 2;
+    int columnThree = 3 * COLS / 4;
+    int rowSplit = (2 * LINES) / 3;
+    
     // Initialize windows here
-    songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength (up down), ylength (left right), xpos, ypos<>);
-    currentlyPlaying = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
-    soundFontList = newwin((LINES/3)+2,(COLS/2)-2, 2*(LINES/3)-1, (COLS/4)+1);
-    about = newwin((LINES/3)+2,(COLS/4), 2*(LINES/3)-1, (COLS/2));
-    queueList = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
+    songList = newwin(bottom - top, columnOne - left, top, left);
+    currentlyPlaying = newwin(rowSplit - top, columnThree - columnOne, top, columnOne);
+    soundFontList = newwin(bottom - rowSplit, columnTwo - columnOne, rowSplit, columnOne);
+    about = newwin(bottom - rowSplit, columnThree - columnTwo, rowSplit, columnTwo);
+    queueList = newwin(bottom - top, right - columnThree, top, columnThree);
 
     // Allow windows to use keypad
     keypad(stdscr, TRUE);
@@ -79,6 +88,14 @@ void NompTUI::initCurses()
     keypad(soundFontList, TRUE);
     keypad(about, TRUE);
     keypad(queueList, TRUE);
+
+    // Wait for input for each window for 100 ms
+    wtimeout(stdscr, 100);
+    wtimeout(currentlyPlaying, 100);
+    wtimeout(songList, 100);
+    wtimeout(soundFontList, 100);
+    wtimeout(about, 100);
+    wtimeout(queueList, 100);
     
     windows.push_back(songList);
     windows.push_back(soundFontList);
