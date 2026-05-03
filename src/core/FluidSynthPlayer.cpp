@@ -58,13 +58,13 @@ FluidSynthPlayer::~FluidSynthPlayer()
 
 bool FluidSynthPlayer::isValidMidi(const std::filesystem::path &midiFile)
 {
-    if (!fluid_is_midifile(midiFile.c_str())) return false;
+    if (!fluid_is_midifile(midiFile.string().c_str())) return false;
     return true;
 }
 
 bool FluidSynthPlayer::isValidSoundFont(const std::filesystem::path &soundFontFile)
 {
-    if (!fluid_is_soundfont(soundFontFile.c_str())) return false;
+    if (!fluid_is_soundfont(soundFontFile.string().c_str())) return false;
     return true;
 }
 
@@ -83,7 +83,7 @@ int FluidSynthPlayer::loadSoundFont(const std::filesystem::path &soundFontFile)
         sfid = 0;
     }
 
-    sfid = fluid_synth_sfload(synth, soundFontFile.c_str(), 1);
+    sfid = fluid_synth_sfload(synth, soundFontFile.string().c_str(), 1);
     return sfid;
 }
 
@@ -114,9 +114,8 @@ bool FluidSynthPlayer::play(const std::filesystem::path &midiFile, const std::fi
     }
     
     // Load SoundFont and MIDI file
-    //sfid = fluid_synth_sfload(synth, soundFontFile.c_str(), 1);
-    sfid = loadSoundFont(soundFontFile.c_str());
-    fluid_player_add(player, midiFile.c_str());
+    sfid = loadSoundFont(soundFontFile.string().c_str());
+    fluid_player_add(player, midiFile.string().c_str());
 
     // Start the synthesizer.
     if (!audioDriver)
