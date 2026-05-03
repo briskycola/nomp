@@ -4,7 +4,12 @@
 #include "FluidSynthPlayer.hpp"
 #include <vector>
 #include <memory>
-#include <ncurses.h>
+
+#if defined(__MINGW64__)
+    #include <ncurses/ncurses.h>
+#else
+    #include <ncurses.h>
+#endif
 
 class NompTUI
 {

@@ -15,10 +15,11 @@
 #include "GetSongs.hpp"
 #include <memory>
 #include <ncurses.h>
-#include <ostream>
 #include <vector>
-#include <csignal>
-#include <sstream>
+
+#if defined(__linux__) || defined(__APPLE__)
+    #include <csignal>
+#endif
 
 #define HOVERING 1
 #define NEUTRAL 2
@@ -26,6 +27,7 @@
 
 // Used asynchronously to check if the window
 // needs to be resized
+#if defined(__linux__) || defined(__APPLE__)
 volatile sig_atomic_t isResizeNeeded = false;
 
 // Signal handler to handle SIGWINCH
@@ -33,12 +35,15 @@ void handleSigwinch(int signal)
 {
     isResizeNeeded = true;
 }
+#endif
 
 // Initialize ncurses and all windows
 void NompTUI::initCurses()
 {
     // Asynchronously check for SIGWINCH signal
+#if defined(__linux__) || defined(__APPLE__)
     signal(SIGWINCH, handleSigwinch);
+#endif
 
     // Set locale to UTF-8
     setlocale(LC_ALL, "");
@@ -335,6 +340,7 @@ void NompTUI::displayScreen()
 
     // Re-create the TUI to change the window size
     // when SIGWINCH is recieved
+#if defined(__linux__) || defined(__APPLE__)
     if (isResizeNeeded)
     {
         endwin();
@@ -343,6 +349,7 @@ void NompTUI::displayScreen()
         initCurses();
         isResizeNeeded = false;
     }
+#endif
 
     // Retrieve metadata from MPV backend
     const std::string title = mpvPlayer ? mpvPlayer->getProperty("metadata/title") : "";
