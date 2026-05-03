@@ -18,7 +18,7 @@ all: $(TARGET)
 
 # link
 $(TARGET): $(OBJS)
-	$(CXX) $(OBJS) -o $@ -lmpv -lfluidsynth -lncursesw
+	$(CXX) $(OBJS) -o $@ -lmpv -lfluidsynth-3 -lncursesw
 
 # compile .cpp files into .o files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp

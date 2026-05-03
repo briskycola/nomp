@@ -42,14 +42,18 @@ bool MPVPlayer::isIdle()
     return coreIdle;
 }
 
-bool MPVPlayer::play(const std::string &filename)
+bool MPVPlayer::play(const std::filesystem::path &fileName)
 {
     // This array represents the command sent
     // to the mpv instance along with it's arguments.
     //
     // In this case, we are going to load an
     // audio file and specify the file name.
-    std::array<const char*, 3> mpvCommand = {"loadfile", filename.c_str(), nullptr};
+
+    // Convert filesystem path to a string to account
+    // for platform differences between Windows and UNIX
+    std::string fileNameString = fileName.string();
+    std::array<const char*, 3> mpvCommand = {"loadfile", fileNameString.c_str(), nullptr};
 
     // Send the command to the mpv instance.
     if (mpv_command(mpvHandle, mpvCommand.data()) < 0)

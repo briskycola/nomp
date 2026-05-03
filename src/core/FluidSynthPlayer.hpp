@@ -1,6 +1,6 @@
 #pragma once
 #include <fluidsynth.h>
-#include <string>
+#include <filesystem>
 
 class FluidSynthPlayer
 {
@@ -36,14 +36,13 @@ class FluidSynthPlayer
     public:
         FluidSynthPlayer();
         ~FluidSynthPlayer();
-        //bool isValidFile(const std::string &midiFile, const std::string &soundFontFile);
-        bool isValidMidi(const std::string &midiFile);
-        bool isValidSoundFont(const std::string &soundFontFile);
+        bool isValidMidi(const std::filesystem::path &midiFile);
+        bool isValidSoundFont(const std::filesystem::path &soundFontFile);
         bool isIdle();
-        int loadSoundFont(const std::string &soundFontFile);
+        int loadSoundFont(const std::filesystem::path &soundFontFile);
         int getCurrentTick();
         int getTotalTicks();
-        bool play(const std::string &midiFile, const std::string &soundFontFile);
+        bool play(const std::filesystem::path &midiFile, const std::filesystem::path &soundFontFile);
         bool stop();
         void seek(double time);
         void reverb();

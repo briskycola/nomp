@@ -14,11 +14,11 @@
 #include "nctui.hpp"
 #include "GetSongs.hpp"
 #include <memory>
-#include <ncurses.h>
-#include <ostream>
 #include <vector>
-#include <csignal>
-#include <sstream>
+
+#if defined(__linux__) || defined(__APPLE__)
+    #include <csignal>
+#endif
 
 #define HOVERING 1
 #define NEUTRAL 2
@@ -26,6 +26,7 @@
 
 // Used asynchronously to check if the window
 // needs to be resized
+#if defined(__linux__) || defined(__APPLE__)
 volatile sig_atomic_t isResizeNeeded = false;
 
 // Signal handler to handle SIGWINCH
@@ -33,16 +34,19 @@ void handleSigwinch(int signal)
 {
     isResizeNeeded = true;
 }
+#endif
 
 // Initialize ncurses and all windows
 void NompTUI::initCurses()
 {
     // Asynchronously check for SIGWINCH signal
+#if defined(__linux__) || defined(__APPLE__)
     signal(SIGWINCH, handleSigwinch);
+#endif
 
     // Set locale to UTF-8
     setlocale(LC_ALL, "");
-    setlocale(LC_NUMERIC,"C");
+    setlocale(LC_NUMERIC, "C");
 
     // Initialize ncurses itself along with colors
     initscr();
@@ -54,19 +58,28 @@ void NompTUI::initCurses()
     // Don't show user input
     noecho();
 
-    // Set terminal to half-delay mode
-    halfdelay(1);
+    // Set delay for ESC key to 25 ms
     set_escdelay(25);
 
     // Gets rid of cursor
     curs_set(0);
 
+    // Define layout grid for ncurses
+    int top = 1;
+    int bottom = LINES - 1;
+    int left = 0;
+    int right = COLS;
+    int columnOne = COLS / 4;
+    int columnTwo = COLS / 2;
+    int columnThree = 3 * COLS / 4;
+    int rowSplit = (2 * LINES) / 3;
+    
     // Initialize windows here
-    songList = newwin(LINES-1, (COLS/4)-1, 1, 1); //newwin(xlength (up down), ylength (left right), xpos, ypos<>);
-    currentlyPlaying = newwin(4*(LINES/6),COLS/2, 1, (COLS/4));
-    soundFontList = newwin((LINES/3)+2,(COLS/2)-2, 2*(LINES/3)-1, (COLS/4)+1);
-    about = newwin((LINES/3)+2,(COLS/4), 2*(LINES/3)-1, (COLS/2));
-    queueList = newwin(LINES-1,COLS/4, 1, 3*(COLS/4));
+    songList = newwin(bottom - top, columnOne - left, top, left);
+    currentlyPlaying = newwin(rowSplit - top, columnThree - columnOne, top, columnOne);
+    soundFontList = newwin(bottom - rowSplit, columnTwo - columnOne, rowSplit, columnOne);
+    about = newwin(bottom - rowSplit, columnThree - columnTwo, rowSplit, columnTwo);
+    queueList = newwin(bottom - top, right - columnThree, top, columnThree);
 
     // Allow windows to use keypad
     keypad(stdscr, TRUE);
@@ -76,6 +89,14 @@ void NompTUI::initCurses()
     keypad(about, TRUE);
     keypad(queueList, TRUE);
 
+    // Wait for input for each window for 100 ms
+    wtimeout(stdscr, 100);
+    wtimeout(currentlyPlaying, 100);
+    wtimeout(songList, 100);
+    wtimeout(soundFontList, 100);
+    wtimeout(about, 100);
+    wtimeout(queueList, 100);
+    
     windows.push_back(songList);
     windows.push_back(soundFontList);
     windows.push_back(about);
@@ -85,20 +106,30 @@ void NompTUI::initCurses()
     currentWindow = windows.begin();
 }
 
-// Initializing MPV and Fluidsynth players
+// Initialize MPV and Fluidsynth players
 void NompTUI::initPlayer()
 {
     getSongs = std::make_unique<GetSongs>();
     mpvPlayer = std::make_unique<MPVPlayer>();
     fluidSynthPlayer = std::make_unique<FluidSynthPlayer>();
     isFluidSynth = false;
+}
+
+// Initialize Paths for songs
+void NompTUI::initPaths()
+{
     audioFiles = getSongs->getFilePaths("NompSongs");
-    soundFontfiles = getSongs->getFilePaths("SoundFonts");
-    currentSong = audioFiles.begin(); //iterator for visual files
-    currentSoundFont = soundFontfiles.begin();
+    soundFontFiles = getSongs->getFilePaths("SoundFonts");
+    currentSong = audioFiles.begin();
+    currentSoundFont = soundFontFiles.begin();
+}
+
+// Initialize Queue for songs
+void NompTUI::initQueue()
+{
     queue.reserve(20);
-    queue = {}; 
-    queueTop = queue.begin(); // iterator that points to the actual current song
+    queue = {};
+    queueTop = queue.begin();
     isQueue = false;
 }
 
@@ -126,7 +157,7 @@ void NompTUI::nextInQueue()
     }
 }
 
-void NompTUI::play(const std::string &audioFile, const std::string &soundFontFile)
+void NompTUI::play(const std::filesystem::path &audioFile, const std::filesystem::path &soundFontFile)
 {
     // Stop MPV and FluidSynth players (if they are playing)
     mpvPlayer->stop();
@@ -250,13 +281,13 @@ void NompTUI::displaySoundFonts() //display contents of song list to songList
     int properWidth = maxWidth - startX - 1;
     if (properWidth < 0) properWidth = 0;
 
-    for (long unsigned int fi = 0; fi < soundFontfiles.size(); fi++)
+    for (long unsigned int fi = 0; fi < soundFontFiles.size(); fi++)
     {
         // print just the name on each descending
         // converting from path > string > const char*
-        std::string filenameString = soundFontfiles[fi].filename().string();
+        std::string filenameString = soundFontFiles[fi].filename().string();
 
-        if (*currentSoundFont == soundFontfiles[fi])
+        if (*currentSoundFont == soundFontFiles[fi])
         {
             wattron(soundFontList, COLOR_PAIR(NEUTRAL));
             mvwprintw(soundFontList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
@@ -325,6 +356,7 @@ void NompTUI::displayScreen()
 
     // Re-create the TUI to change the window size
     // when SIGWINCH is recieved
+#if defined(__linux__) || defined(__APPLE__)
     if (isResizeNeeded)
     {
         endwin();
@@ -333,12 +365,15 @@ void NompTUI::displayScreen()
         initCurses();
         isResizeNeeded = false;
     }
+#endif
 
     // Retrieve metadata from MPV backend
     const std::string title = mpvPlayer ? mpvPlayer->getProperty("metadata/title") : "";
     const std::string artist = mpvPlayer ? mpvPlayer->getProperty("metadata/artist") : "";
     const std::string album = mpvPlayer ? mpvPlayer->getProperty("metadata/album") : "";
     const std::string date = mpvPlayer ? mpvPlayer->getProperty("metadata/date") : "";
+    const std::string codec = mpvPlayer ? mpvPlayer->getProperty("audio-codec") : "";
+    const std::string ao = mpvPlayer ? mpvPlayer->getProperty("current-ao") : "";
     const std::string currentTime = mpvPlayer ? mpvPlayer->getProperty("time-pos") : "";
     const std::string totalTime = mpvPlayer ? mpvPlayer->getProperty("duration") : "";
 
@@ -363,18 +398,21 @@ void NompTUI::displayScreen()
 
     if (!isFluidSynth)
     {
-        mvwprintw(currentlyPlaying, 4, 2, "Title:          %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
-        mvwprintw(currentlyPlaying, 5, 2, "Artist:         %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
-        mvwprintw(currentlyPlaying, 6, 2, "Album:          %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
-        mvwprintw(currentlyPlaying, 7, 2, "Date:           %-*.*s", maxWidth, maxWidth, date.empty() ? "N/A" : date.c_str());
-        mvwprintw(currentlyPlaying, 8, 2, "Current Time:   %-*.*s", maxWidth, maxWidth, currentTimeFormatted.c_str());
-        mvwprintw(currentlyPlaying, 9, 2, "Total Time:     %-*.*s", maxWidth, maxWidth, totalTimeFormatted.c_str());
+        mvwprintw(currentlyPlaying, 4, 2, "Title:               %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
+        mvwprintw(currentlyPlaying, 5, 2, "Artist:              %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
+        mvwprintw(currentlyPlaying, 6, 2, "Album:               %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
+        mvwprintw(currentlyPlaying, 7, 2, "Date:                %-*.*s", maxWidth, maxWidth, date.empty() ? "N/A" : date.c_str());
+        mvwprintw(currentlyPlaying, 8, 2, "Codec:               %-*.*s", maxWidth, maxWidth, codec.empty() ? "N/A" : codec.c_str());
+        mvwprintw(currentlyPlaying, 9, 2, "Audio API:           %-*.*s", maxWidth, maxWidth, ao.empty() ? "N/A" : ao.c_str());
+        mvwprintw(currentlyPlaying, 10, 2, "Current Time:        %-*.*s", maxWidth, maxWidth, currentTimeFormatted.c_str());
+        mvwprintw(currentlyPlaying, 11, 2, "Total Time:          %-*.*s", maxWidth, maxWidth, totalTimeFormatted.c_str());
     }
 
     else
     {
-        mvwprintw(currentlyPlaying, 4, 2, "Current Tick:   %d", currentTick);
-        mvwprintw(currentlyPlaying, 5, 2, "Total Ticks:    %d", totalTicks);
+        mvwprintw(currentlyPlaying, 4, 2, "Codec:          %s", "MIDI");
+        mvwprintw(currentlyPlaying, 5, 2, "Current Tick:   %d", currentTick);
+        mvwprintw(currentlyPlaying, 6, 2, "Total Ticks:    %d", totalTicks);
     }
 
     mvwprintw(about, 2, 10, "About NOMP");
@@ -460,99 +498,99 @@ void NompTUI::displayAbout()
 // What happens when songList is selected
 void NompTUI::songListSelect() 
 {
-        switch (getUserInput(*currentWindow))
-        {
-            case '\n': case KEY_ENTER:
-                if (audioFiles.empty()) break;
-                play(*currentSong, *currentSoundFont);
-                isQueue = false;
-                break;
-                
-            case KEY_DOWN:
-                if (currentSong != audioFiles.end()-1) currentSong++;
-                break;
-
-            case KEY_UP:
-                if (currentSong != audioFiles.begin()) currentSong--;  
-                break;
-
-            case KEY_RIGHT: case 'd':
-                currentWindow++;
-                displayScreen();
-                break;
-
-            case 'r':
-                if (isFluidSynth) fluidSynthPlayer->reverb();
-                break;
-
-            case 'p':
-                if (isFluidSynth) fluidSynthPlayer->togglePause();
-                else mpvPlayer->togglePause();
-                break;
-
-            case 'c':
-                queue.clear();
-                queueTop = queue.begin();
-                wclear(queueList);
-                displayScreen();
-                mpvPlayer->stop();
-                fluidSynthPlayer->stop();
-                isQueue = false;
-                break;
-                
-            case 'j':
-                // Add to queue and play now
-                if (audioFiles.empty()) break;
-                if (queue.size() >= 20) break;
-                queue.insert(queue.begin(), *currentSong);
-                play(*queueTop, *currentSoundFont);
-                displayQueue();
-                isQueue = true;
-                break;
-
-            case 'k':
-                // Play next
-                if (audioFiles.empty()) break;
-                if (queue.size() >= 20) break;
-                if (queue.size() > 0) queue.insert(queue.begin()+1, *currentSong);
-                else queue.insert(queue.begin(), *currentSong);
-                displayQueue();
-                break;
-
-            case 'l':
-                // Push back
-                if (audioFiles.empty()) break;
-                if (queue.size() >= 20) break;
-                queue.push_back(*currentSong);
-                displayQueue();
-                break;
+    switch (getUserInput(*currentWindow))
+    {
+        case '\n': case KEY_ENTER:
+            if (audioFiles.empty()) break;
+            play(*currentSong, *currentSoundFont);
+            isQueue = false;
+            break;
             
-            case ',':
-                if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
-                else mpvPlayer->seek("-5");
-                break;
+        case KEY_DOWN:
+            if (currentSong != audioFiles.end()-1) currentSong++;
+            break;
 
-            case '.':
-                if (isFluidSynth) fluidSynthPlayer->seek(5.0);
-                else mpvPlayer->seek("5");
-                break;
-                
-            case '<':
-                 wclear(queueList);
-                 displayQueue();
-                 if(queueTop != queue.begin()) queueTop--;
-                 play(*queueTop, *currentSoundFont);
-                 break;
+        case KEY_UP:
+            if (currentSong != audioFiles.begin()) currentSong--;  
+            break;
 
-             case '>':
-                wclear(queueList);
-                displayQueue();
-                if(queueTop != queue.end()-1) queueTop++;
-                play(*queueTop, *currentSoundFont);
-                break;
-                                
-            default:
-                break;
+        case KEY_RIGHT: case 'd':
+            currentWindow++;
+            displayScreen();
+            break;
+
+        case 'r':
+            if (isFluidSynth) fluidSynthPlayer->reverb();
+            break;
+
+        case 'p':
+            if (isFluidSynth) fluidSynthPlayer->togglePause();
+            else mpvPlayer->togglePause();
+            break;
+
+        case 'c':
+            queue.clear();
+            queueTop = queue.begin();
+            wclear(queueList);
+            mpvPlayer->stop();
+            fluidSynthPlayer->stop();
+            isQueue = false;
+            isFluidSynth = false;
+            displayScreen();
+            break;
+            
+        case 'j':
+            // Add to queue and play now
+            if (audioFiles.empty()) break;
+            if (queue.size() >= 20) break;
+            queue.insert(queue.begin(), *currentSong);
+            play(*queueTop, *currentSoundFont);
+            displayQueue();
+            isQueue = true;
+            break;
+
+        case 'k':
+            // Play next
+            if (audioFiles.empty()) break;
+            if (queue.size() >= 20) break;
+            if (queue.size() > 0) queue.insert(queue.begin()+1, *currentSong);
+            else queue.insert(queue.begin(), *currentSong);
+            displayQueue();
+            break;
+
+        case 'l':
+            // Push back
+            if (audioFiles.empty()) break;
+            if (queue.size() >= 20) break;
+            queue.push_back(*currentSong);
+            displayQueue();
+            break;
+        
+        case ',':
+            if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+            else mpvPlayer->seek("-5");
+            break;
+
+        case '.':
+            if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+            else mpvPlayer->seek("5");
+            break;
+
+        case '<':
+            wclear(queueList);
+            displayQueue();
+            if(queueTop != queue.begin()) queueTop--;
+            play(*queueTop, *currentSoundFont);
+            break;
+
+        case '>':
+            wclear(queueList);
+            displayQueue();
+            if(queueTop != queue.end()-1) queueTop++;
+            play(*queueTop, *currentSoundFont);
+            break;
+                            
+        default: break;
     }
 }
 
@@ -560,207 +598,211 @@ void NompTUI::songListSelect()
 // what happens when controlbar is selected
 void NompTUI::soundFontSelect()
 {
-        switch (getUserInput(*currentWindow))
-        {
-            case '\n': case KEY_ENTER:
-                if (soundFontfiles.empty()) break;
-                if (fluidSynthPlayer->isValidSoundFont(*currentSoundFont))
-                {
-                    fluidSynthPlayer->loadSoundFont(*currentSoundFont);
-                }
-                break;
-                
-            case KEY_DOWN:
-                if (currentSoundFont != soundFontfiles.end()-1) currentSoundFont++;
-                break;
+    switch (getUserInput(*currentWindow))
+    {
+        case '\n': case KEY_ENTER:
+            if (soundFontFiles.empty()) break;
+            if (fluidSynthPlayer->isValidSoundFont(*currentSoundFont))
+            {
+                fluidSynthPlayer->loadSoundFont(*currentSoundFont);
+            }
+            break;
+            
+        case KEY_DOWN:
+            if (currentSoundFont != soundFontFiles.end()-1) currentSoundFont++;
+            break;
 
-            case KEY_UP:
-                if (currentSoundFont != soundFontfiles.begin()) currentSoundFont--;  
-                break;
+        case KEY_UP:
+            if (currentSoundFont != soundFontFiles.begin()) currentSoundFont--;  
+            break;
 
-            case KEY_LEFT: case 'a':
-                currentWindow--;
-                displayScreen();
-                break;
+        case KEY_LEFT: case 'a':
+            currentWindow--;
+            displayScreen();
+            break;
 
-            case KEY_RIGHT: case 'd':
-                currentWindow++;
-                displayScreen();
-                break;
+        case KEY_RIGHT: case 'd':
+            currentWindow++;
+            displayScreen();
+            break;
 
-            case 'r':
-                if (isFluidSynth) fluidSynthPlayer->reverb();
-                break;
+        case 'r':
+            if (isFluidSynth) fluidSynthPlayer->reverb();
+            break;
 
-            case 'p':
-                if (isFluidSynth) fluidSynthPlayer->togglePause();
-                else mpvPlayer->togglePause();
+        case 'p':
+            if (isFluidSynth) fluidSynthPlayer->togglePause();
+            else mpvPlayer->togglePause();
+            break;
 
-            case 'c':
-                queue.clear();
-                queueTop = queue.begin();
-                wclear(queueList);
-                displayScreen();
-                mpvPlayer->stop();
-                fluidSynthPlayer->stop();
-                isQueue = false;
-                break;
-                
-            case ',':
-                if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
-                else mpvPlayer->seek("-5");
-                break;
+        case 'c':
+            queue.clear();
+            queueTop = queue.begin();
+            wclear(queueList);
+            mpvPlayer->stop();
+            fluidSynthPlayer->stop();
+            isQueue = false;
+            isFluidSynth = false;
+            displayScreen();
+            break;
+            
+        case ',':
+            if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+            else mpvPlayer->seek("-5");
+            break;
 
-            case '.':
-                if (isFluidSynth) fluidSynthPlayer->seek(5.0);
-                else mpvPlayer->seek("5");
-                break;
+        case '.':
+            if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+            else mpvPlayer->seek("5");
+            break;
 
-            case '<':
-                 wclear(queueList);
-                 displayQueue();
-                 if(queueTop != queue.begin()) queueTop--;
-                 play(*queueTop, *currentSoundFont);
-                 break;
+        case '<':
+            wclear(queueList);
+            displayQueue();
+            if(queueTop != queue.begin()) queueTop--;
+            play(*queueTop, *currentSoundFont);
+            break;
 
-             case '>':
-                wclear(queueList);
-                displayQueue();
-                if(queueTop != queue.end()-1) queueTop++;
-                play(*queueTop, *currentSoundFont);
-                break;
+        case '>':
+            wclear(queueList);
+            displayQueue();
+            if(queueTop != queue.end()-1) queueTop++;
+            play(*queueTop, *currentSoundFont);
+            break;
 
-            default: break;
-        }
+        default: break;
+    }
 }
 
 void NompTUI::aboutSelect()
 {
-        switch (getUserInput(*currentWindow))
-        {
-            case KEY_ENTER: case '\n':
-                //open contributor page + help manuali
-                displayAbout();
-                while(getUserInput(*currentWindow)!='e'){}
-                clear();
-                refresh();
-                break;
+    switch (getUserInput(*currentWindow))
+    {
+        case KEY_ENTER: case '\n':
+            //open contributor page + help manuali
+            displayAbout();
+            while(getUserInput(*currentWindow)!='e'){}
+            clear();
+            refresh();
+            break;
 
-            case KEY_LEFT: case 'a':
-                currentWindow--;
-                displayScreen();
-                break;
+        case KEY_LEFT: case 'a':
+            currentWindow--;
+            displayScreen();
+            break;
 
-            case KEY_RIGHT: case 'd':
-                currentWindow++;
-                displayScreen();
-                break;
+        case KEY_RIGHT: case 'd':
+            currentWindow++;
+            displayScreen();
+            break;
 
-            case 'p':
-                if (isFluidSynth) fluidSynthPlayer->togglePause();
-                else mpvPlayer->togglePause();
-                break;
+        case 'p':
+            if (isFluidSynth) fluidSynthPlayer->togglePause();
+            else mpvPlayer->togglePause();
+            break;
 
-            case 'c':
-                queue.clear();
-                queueTop = queue.begin();
-                wclear(queueList);
-                displayScreen();
-                mpvPlayer->stop();
-                fluidSynthPlayer->stop();
-                isQueue = false;
-                break;
+        case 'c':
+            queue.clear();
+            queueTop = queue.begin();
+            wclear(queueList);
+            mpvPlayer->stop();
+            fluidSynthPlayer->stop();
+            isQueue = false;
+            isFluidSynth = false;
+            displayScreen();
+            break;
 
-            case ',':
-                if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
-                else mpvPlayer->seek("-5");
-                break;
+        case ',':
+            if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+            else mpvPlayer->seek("-5");
+            break;
 
-            case '.':
-                if (isFluidSynth) fluidSynthPlayer->seek(5.0);
-                else mpvPlayer->seek("5");
-                break;
+        case '.':
+            if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+            else mpvPlayer->seek("5");
+            break;
 
-            case '<':
-                 wclear(queueList);
-                 displayQueue();
-                 if(queueTop != queue.begin()) queueTop--;
-                 play(*queueTop, *currentSoundFont);
-                 break;
+        case '<':
+            wclear(queueList);
+            displayQueue();
+            if(queueTop != queue.begin()) queueTop--;
+            play(*queueTop, *currentSoundFont);
+            break;
+            
+        case '>':
+            wclear(queueList);
+            displayQueue();
+            if(queueTop != queue.end()-1) queueTop++;
+            play(*queueTop, *currentSoundFont);
+            break;
 
-             case '>':
-                wclear(queueList);
-                displayQueue();
-                if(queueTop != queue.end()-1) queueTop++;
-                play(*queueTop, *currentSoundFont);
-                break;
-
-            default: break;
-        }
+        default: break;
+    }
 }
 
 //what happens if settings is selected
 void NompTUI::queueSelect()
 {   
-        switch (getUserInput(*currentWindow))
-        {
-            case KEY_LEFT:
-                currentWindow--;
-                wbkgd(queueList,COLOR_PAIR(0));
-                displayScreen();
-                break;
+    switch (getUserInput(*currentWindow))
+    {
+        case KEY_LEFT:
+            currentWindow--;
+            wbkgd(queueList,COLOR_PAIR(0));
+            displayScreen();
+            break;
 
-            case '\n': case KEY_ENTER:
-                if (queue.size() == 0) break;
-                play(*queueTop, *currentSoundFont);
-                isQueue = true;
-                break;
-                
-            case 'r':
-                if (isFluidSynth) fluidSynthPlayer->reverb();
-                break;
-                
-            case 'p':
-                if (isFluidSynth) fluidSynthPlayer->togglePause();
-                else mpvPlayer->togglePause();
-                break;
-
-            case 'c':
-                queue.clear();
-                queueTop = queue.begin();
-                wclear(queueList);
-                displayScreen();
-                mpvPlayer->stop();
-                fluidSynthPlayer->stop();
-                isQueue = false;
-
-            case ',':
-                if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
-                else mpvPlayer->seek("-5");
-                break;
-                
-            case '.':
-                if (isFluidSynth) fluidSynthPlayer->seek(5.0);
-                else mpvPlayer->seek("5");
-                break;
-                
-            case '<':
-                 wclear(queueList);
-                 displayQueue();
-                 if(queueTop != queue.begin()) queueTop--;
-                 play(*queueTop, *currentSoundFont);
-                 break;
-
-             case '>':
-                wclear(queueList);
-                displayQueue();
-                if(queueTop != queue.end()-1) queueTop++;
-                play(*queueTop, *currentSoundFont);
-                break;
+        case '\n': case KEY_ENTER:
+            if (queue.size() == 0) break;
+            play(*queueTop, *currentSoundFont);
+            isQueue = true;
+            break;
             
-            default:
-                break;
-        }
+        case 'r':
+            if (isFluidSynth) fluidSynthPlayer->reverb();
+            break;
+            
+        case 'p':
+            if (isFluidSynth) fluidSynthPlayer->togglePause();
+            else mpvPlayer->togglePause();
+            break;
+
+        case 'c':
+            queue.clear();
+            queueTop = queue.begin();
+            wclear(queueList);
+            mpvPlayer->stop();
+            fluidSynthPlayer->stop();
+            isQueue = false;
+            isFluidSynth = false;
+            displayScreen();
+            break;
+            
+        case ',':
+            if (isFluidSynth) fluidSynthPlayer->seek(-5.0);
+            else mpvPlayer->seek("-5");
+            break;
+            
+        case '.':
+            if (isFluidSynth) fluidSynthPlayer->seek(5.0);
+            else mpvPlayer->seek("5");
+            break;
+            
+        case '<':
+            wclear(queueList);
+            displayQueue();
+            if(queueTop != queue.begin()) queueTop--;
+            play(*queueTop, *currentSoundFont);
+            break;
+
+        case '>':
+            wclear(queueList);
+            displayQueue();
+            if(queueTop != queue.end()-1) queueTop++;
+            play(*queueTop, *currentSoundFont);
+            break;
+        
+        default: break;
+    }
 }
 
 int NompTUI::getUserInput(WINDOW *win)
