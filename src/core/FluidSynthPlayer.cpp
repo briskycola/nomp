@@ -87,6 +87,18 @@ int FluidSynthPlayer::loadSoundFont(const std::string &soundFontFile)
     return sfid;
 }
 
+int FluidSynthPlayer::getCurrentTick()
+{
+    int currentTick = fluid_player_get_current_tick(player);
+    return currentTick;
+}
+
+int FluidSynthPlayer::getTotalTicks()
+{
+    int totalTicks = fluid_player_get_total_ticks(player);
+    return totalTicks;
+}
+
 bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soundFontFile)
 {
     // Check if the user entered a valid
