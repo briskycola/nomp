@@ -1,5 +1,6 @@
 #pragma once
 #include <mpv/client.h>
+#include <filesystem>
 #include <string>
 
 class MPVPlayer
@@ -22,7 +23,7 @@ class MPVPlayer
     public:
         MPVPlayer();
         ~MPVPlayer();
-        bool play(const std::string &filename);
+        bool play(const std::filesystem::path &fileName);
         bool stop();
         bool togglePause();
         bool seek(const std::string time);

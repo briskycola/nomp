@@ -56,13 +56,13 @@ FluidSynthPlayer::~FluidSynthPlayer()
     }
 }
 
-bool FluidSynthPlayer::isValidMidi(const std::string &midiFile)
+bool FluidSynthPlayer::isValidMidi(const std::filesystem::path &midiFile)
 {
     if (!fluid_is_midifile(midiFile.c_str())) return false;
     return true;
 }
 
-bool FluidSynthPlayer::isValidSoundFont(const std::string &soundFontFile)
+bool FluidSynthPlayer::isValidSoundFont(const std::filesystem::path &soundFontFile)
 {
     if (!fluid_is_soundfont(soundFontFile.c_str())) return false;
     return true;
@@ -75,7 +75,7 @@ bool FluidSynthPlayer::isIdle()
     else return false;
 }
 
-int FluidSynthPlayer::loadSoundFont(const std::string &soundFontFile)
+int FluidSynthPlayer::loadSoundFont(const std::filesystem::path &soundFontFile)
 {
     if (sfid != 0)
     {
@@ -99,7 +99,7 @@ int FluidSynthPlayer::getTotalTicks()
     return totalTicks;
 }
 
-bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soundFontFile)
+bool FluidSynthPlayer::play(const std::filesystem::path &midiFile, const std::filesystem::path &soundFontFile)
 {
     // Check if the user entered a valid
     // MIDI file and SoundFont file
@@ -112,12 +112,6 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
         delete_fluid_player(player);
         player = new_fluid_player(synth);
     }
-
-    //if (sfid != 0)
-    //{
-    //    fluid_synth_sfunload(synth, sfid, 1);
-    //    sfid = 0;
-    //}
     
     // Load SoundFont and MIDI file
     //sfid = fluid_synth_sfload(synth, soundFontFile.c_str(), 1);

@@ -39,7 +39,7 @@ class NompTUI
         std::vector<std::filesystem::path>::iterator currentSong;
 
         // Dynamic array of SoundFont files in directory
-        std::vector<std::filesystem::path> soundFontfiles;
+        std::vector<std::filesystem::path> soundFontFiles;
         std::vector<std::filesystem::path>::iterator currentSoundFont;
 
         // Dynamic array of audio files in queue
@@ -51,6 +51,8 @@ class NompTUI
         // Initialization Functions
         void initCurses();
         void initPlayer();
+        void initPaths();
+        void initQueue();
 
         // Display functions for TUI
         int statusBar();
@@ -75,7 +77,7 @@ class NompTUI
         void selectWindow();
 
         // Audio Playback functions for TUI
-        void play(const std::string &audioFile, const std::string &soundFontFile);
+        void play(const std::filesystem::path &audioFile, const std::filesystem::path &soundFontFile);
         void togglePause();
  
 };
