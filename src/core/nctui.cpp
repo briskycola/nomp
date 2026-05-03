@@ -14,7 +14,6 @@
 #include "nctui.hpp"
 #include "GetSongs.hpp"
 #include <memory>
-#include <ncurses.h>
 #include <vector>
 
 #if defined(__linux__) || defined(__APPLE__)
