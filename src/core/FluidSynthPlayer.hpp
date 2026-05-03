@@ -41,6 +41,8 @@ class FluidSynthPlayer
         bool isValidSoundFont(const std::string &soundFontFile);
         bool isIdle();
         int loadSoundFont(const std::string &soundFontFile);
+        int getCurrentTick();
+        int getTotalTicks();
         bool play(const std::string &midiFile, const std::string &soundFontFile);
         bool stop();
         void seek(double time);

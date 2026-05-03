@@ -25,6 +25,7 @@ class NompTUI
         WINDOW *songList;
         WINDOW *currentlyPlaying;
         WINDOW *soundFontList;
+        WINDOW *about;
         WINDOW *queueList;
 
         // Smart pointers for audio backends
@@ -52,16 +53,20 @@ class NompTUI
         void initPlayer();
 
         // Display functions for TUI
+        int statusBar();
         void displaySongs();
         void displaySoundFonts();
         void displayQueue();
         void displayScreen();
+        void displayAbout();
         void deleteWindows();
+        std::string prettyPrintTime(int totalSeconds);
 
         // Media controls
         void songListSelect();
         void currPlaySelect();
         void soundFontSelect();
+        void aboutSelect();
         void nextInQueue();
         void queueSelect();
 
