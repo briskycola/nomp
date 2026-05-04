@@ -418,14 +418,14 @@ void NompTUI::displayScreen()
         mvwprintw(currentlyPlaying, 10, 2, "Codec:          %-*.*s", maxWidth, maxWidth, codec.empty() ? "N/A" : codec.c_str());
         mvwprintw(currentlyPlaying, 11, 2, "Audio API:      %-*.*s", maxWidth, maxWidth, ao.empty() ? "N/A" : ao.c_str());
         mvwprintw(currentlyPlaying, 18, (maxWidth/2)-9, "Current Time: %-*.*s", maxWidth, maxWidth, currentTimeFormatted.c_str());
-        mvwprintw(currentlyPlaying, 22, (maxWidth/2)-8, "Total Time: %-*.*s", maxWidth, maxWidth, totalTimeFormatted.c_str());
+        mvwprintw(currentlyPlaying, 22, (maxWidth/2)-8, "Total Time:  %-*.*s", maxWidth, maxWidth, totalTimeFormatted.c_str());
     }
 
     else
     {
-        mvwprintw(currentlyPlaying, 4, 2, "Codec:          %s", "MIDI");
-        mvwprintw(currentlyPlaying, 5, 2, "Current Tick:   %d", currentTick);
-        mvwprintw(currentlyPlaying, 6, 2, "Total Ticks:    %d", totalTicks);
+        mvwprintw(currentlyPlaying, 10, 2, "Codec:          %s", "MIDI");
+        mvwprintw(currentlyPlaying, 18, (maxWidth/2)-9, "Current Tick: %d", currentTick);
+        mvwprintw(currentlyPlaying, 22, (maxWidth/2)-8, "Total Ticks: %d", totalTicks);
     }
 
     wattron(about, A_BOLD);
