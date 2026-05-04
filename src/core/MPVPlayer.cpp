@@ -42,14 +42,18 @@ bool MPVPlayer::isIdle()
     return coreIdle;
 }
 
-bool MPVPlayer::play(const std::string &filename)
+bool MPVPlayer::play(const std::filesystem::path &fileName)
 {
     // This array represents the command sent
     // to the mpv instance along with it's arguments.
     //
     // In this case, we are going to load an
     // audio file and specify the file name.
-    std::array<const char*, 3> mpvCommand = {"loadfile", filename.c_str(), nullptr};
+
+    // Convert filesystem path to a string to account
+    // for platform differences between Windows and UNIX
+    std::string fileNameString = fileName.string();
+    std::array<const char*, 3> mpvCommand = {"loadfile", fileNameString.c_str(), nullptr};
 
     // Send the command to the mpv instance.
     if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
@@ -108,20 +112,16 @@ bool MPVPlayer::seek(const std::string time)
     return true;
 }
 
-std::string MPVPlayer::getMetadata(const std::string &key) const
+std::string MPVPlayer::getProperty(const std::string &key) const
 {
-    if (!mpvHandle)
-    {
-        return "";
-    }
+    // Return an empty string if MPV is not initialized
+    if (!mpvHandle) return "";
 
-    const std::string propertyName = "metadata/" + key;
-    char *value = mpv_get_property_string(mpvHandle, propertyName.c_str());
+    // Get the property associated with the key
+    char *value = mpv_get_property_string(mpvHandle, key.c_str());
 
-    if (!value)
-    {
-        return "";
-    }
+    // If there was no property, return an empty string
+    if (!value) return "";
 
     std::string metadataValue(value);
     mpv_free(value);
