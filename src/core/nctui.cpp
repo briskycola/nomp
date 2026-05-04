@@ -15,6 +15,7 @@
 #include "GetSongs.hpp"
 #include <memory>
 #include <vector>
+#include <sstream>
 
 #if defined(__linux__) || defined(__APPLE__)
     #include <csignal>
@@ -264,8 +265,10 @@ void NompTUI::displaySongs() //display contents of song list to songList
         if (*currentSong == audioFiles[fi])
         {
             wattron(songList, COLOR_PAIR(NEUTRAL));
+            wattron(songList, A_BOLD);
             mvwprintw(songList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
             wattroff(songList, COLOR_PAIR(NEUTRAL));
+            wattroff(songList, A_BOLD);
         }
 
         else mvwprintw(songList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
@@ -290,8 +293,10 @@ void NompTUI::displaySoundFonts() //display contents of song list to songList
         if (*currentSoundFont == soundFontFiles[fi])
         {
             wattron(soundFontList, COLOR_PAIR(NEUTRAL));
+            wattron(soundFontList, A_BOLD);
             mvwprintw(soundFontList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
             wattroff(soundFontList, COLOR_PAIR(NEUTRAL));
+            wattroff(soundFontList, A_BOLD);
         }
 
         else mvwprintw(soundFontList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
@@ -318,7 +323,9 @@ void NompTUI::displayQueue()
         if (std::distance(std::begin(queue), queueTop) == (long int) q)
         { 
             wattron(queueList, COLOR_PAIR(HOVERING));
+            wattron(queueList, A_BOLD);
             mvwprintw(queueList, 2*q+5, startX, "%-*.*s", properWidth-1, properWidth-1, queuedSongString.c_str());
+            wattroff(queueList, A_BOLD);
             wattroff(queueList, COLOR_PAIR(HOVERING));
         }
 
@@ -393,19 +400,25 @@ void NompTUI::displayScreen()
 
     // Display all content to the TUI
     int maxWidth = getmaxx(currentlyPlaying);
-    mvwprintw(songList, 2, 10, "Song List");
+    
+    wattron(songList, A_BOLD);
+    mvwprintw(songList, 2, (getmaxx(songList)/2)-5, "Song List");
+    wattroff(songList, A_BOLD);
+    
+    wattron(currentlyPlaying, A_BOLD);
     mvwprintw(currentlyPlaying, 2, (getmaxx(currentlyPlaying)/2)-9,"Currently Playing");
+    wattroff(currentlyPlaying, A_BOLD);
 
     if (!isFluidSynth)
     {
-        mvwprintw(currentlyPlaying, 4, 2, "Title:               %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
-        mvwprintw(currentlyPlaying, 5, 2, "Artist:              %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
-        mvwprintw(currentlyPlaying, 6, 2, "Album:               %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
-        mvwprintw(currentlyPlaying, 7, 2, "Date:                %-*.*s", maxWidth, maxWidth, date.empty() ? "N/A" : date.c_str());
-        mvwprintw(currentlyPlaying, 8, 2, "Codec:               %-*.*s", maxWidth, maxWidth, codec.empty() ? "N/A" : codec.c_str());
-        mvwprintw(currentlyPlaying, 9, 2, "Audio API:           %-*.*s", maxWidth, maxWidth, ao.empty() ? "N/A" : ao.c_str());
-        mvwprintw(currentlyPlaying, 10, 2, "Current Time:        %-*.*s", maxWidth, maxWidth, currentTimeFormatted.c_str());
-        mvwprintw(currentlyPlaying, 11, 2, "Total Time:          %-*.*s", maxWidth, maxWidth, totalTimeFormatted.c_str());
+        mvwprintw(currentlyPlaying, 6, 2, "Title:          %-*.*s", maxWidth, maxWidth, title.empty() ? "N/A" : title.c_str());
+        mvwprintw(currentlyPlaying, 7, 2, "Artist:         %-*.*s", maxWidth, maxWidth, artist.empty() ? "N/A" : artist.c_str());
+        mvwprintw(currentlyPlaying, 8, 2, "Album:          %-*.*s", maxWidth, maxWidth, album.empty() ? "N/A" : album.c_str());
+        mvwprintw(currentlyPlaying, 9, 2, "Date:           %-*.*s", maxWidth, maxWidth, date.empty() ? "N/A" : date.c_str());
+        mvwprintw(currentlyPlaying, 10, 2, "Codec:          %-*.*s", maxWidth, maxWidth, codec.empty() ? "N/A" : codec.c_str());
+        mvwprintw(currentlyPlaying, 11, 2, "Audio API:      %-*.*s", maxWidth, maxWidth, ao.empty() ? "N/A" : ao.c_str());
+        mvwprintw(currentlyPlaying, 18, (maxWidth/2)-9, "Current Time: %-*.*s", maxWidth, maxWidth, currentTimeFormatted.c_str());
+        mvwprintw(currentlyPlaying, 22, (maxWidth/2)-8, "Total Time: %-*.*s", maxWidth, maxWidth, totalTimeFormatted.c_str());
     }
 
     else
@@ -415,9 +428,17 @@ void NompTUI::displayScreen()
         mvwprintw(currentlyPlaying, 6, 2, "Total Ticks:    %d", totalTicks);
     }
 
-    mvwprintw(about, 2, 10, "About NOMP");
-    mvwprintw(soundFontList, 2, 10, "SoundFonts");
-    mvwprintw(queueList, 2, 10, "Queue");
+    wattron(about, A_BOLD);
+    mvwprintw(about, 2, (getmaxx(about)/2)-5, "About NOMP");
+    wattroff(about, A_BOLD);
+    
+    wattron(soundFontList, A_BOLD);
+    mvwprintw(soundFontList, 2, (getmaxx(soundFontList)/2)-5, "SoundFonts");
+    wattroff(soundFontList, A_BOLD);
+    
+    wattron(queueList, A_BOLD);
+    mvwprintw(queueList, 2, (getmaxx(queueList)/2)-2, "Queue");
+    wattroff(queueList, A_BOLD);
 
     wattron(currentlyPlaying, COLOR_PAIR(NEUTRAL));
     box(currentlyPlaying, 0, 0);
@@ -446,13 +467,13 @@ void NompTUI::displayScreen()
 
     for (int a = 0; a < maxColumns; a++)
     {
-        mvwaddch(currentlyPlaying, 16, a+1, '.');
+        mvwaddch(currentlyPlaying, 20, a+1, '.');
     }
     
     for (int a = 0; a <= statusBarTotal; a++)
     {
         wattron(currentlyPlaying, COLOR_PAIR(SELECTED));
-        mvwaddch(currentlyPlaying, 16, a+1, '-');
+        mvwaddch(currentlyPlaying, 20, a+1, '-');
         wattroff(currentlyPlaying, COLOR_PAIR(SELECTED));
     }
     
