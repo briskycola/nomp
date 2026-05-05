@@ -95,13 +95,14 @@ To get a local copy up and running, follow the steps below depending on your pla
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Place your audio files (`.mp3`, `.wav`, `.flac`, `.aac`, `.ogg`) and MIDI files (`.mid`, `.midi`) along with any SoundFonts (`.sf2`, `.sf3`) into the `NompSongs` folder located in the project root directory. NOMP will automatically detect and load them on startup.
+Place your audio files (`.mp3`, `.wav`, `.flac`, `.aac`, `.ogg`) and MIDI files (`.mid`, `.midi`) into the `NompSongs` folder located in the project root directory. SoundFonts (`.sf2`, `.sf3`) will be placed in a separate `SoundFonts` folder. NOMP will automatically detect and load them on startup.
 
 ```
 nomp/
 └── NompSongs/
     ├── song.mp3
-    ├── beethoven.mid
+    └── beethoven.mid
+└── SoundFonts/
     └── instruments.sf2
 ```
 
