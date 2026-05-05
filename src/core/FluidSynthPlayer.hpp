@@ -1,6 +1,6 @@
 #pragma once
 #include <fluidsynth.h>
-#include <string>
+#include <filesystem>
 
 class FluidSynthPlayer
 {
@@ -22,18 +22,29 @@ class FluidSynthPlayer
         // to fluidsynth.
         fluid_audio_driver_t *audioDriver;
 
+        // Used to hold the status of the player
+        fluid_player_status status;
+
         // Preserve SoundFont ID
         // 0 = no SoundFont loaded
         int sfid;
 
-        // Bool variable to check if player
-        // is currently paused or not.
-        bool isPaused;
-       
+        // Boolean that holds whether or
+        // not reverb is being applied
+        bool isReverb;
+        
     public:
         FluidSynthPlayer();
         ~FluidSynthPlayer();
-        bool isValidFile(const std::string &midiFile, const std::string &soundfontFile);
-        bool play(const std::string &midiFile, const std::string &soundfontFile);
+        bool isValidMidi(const std::filesystem::path &midiFile);
+        bool isValidSoundFont(const std::filesystem::path &soundFontFile);
+        bool isIdle();
+        int loadSoundFont(const std::filesystem::path &soundFontFile);
+        int getCurrentTick();
+        int getTotalTicks();
+        bool play(const std::filesystem::path &midiFile, const std::filesystem::path &soundFontFile);
+        bool stop();
+        void seek(double time);
+        void reverb();
         bool togglePause();
 };

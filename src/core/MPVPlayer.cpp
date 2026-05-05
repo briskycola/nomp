@@ -31,6 +31,52 @@ MPVPlayer::~MPVPlayer()
     mpvHandle = nullptr;
 }
 
+bool MPVPlayer::isIdle()
+{
+    
+    if (mpv_get_property(mpvHandle, "idle-active", MPV_FORMAT_FLAG, &coreIdle) < 0)
+    {
+        std::cerr << "Could not get idle data from mpv\n";
+        return false;
+    }
+    return coreIdle;
+}
+
+bool MPVPlayer::play(const std::filesystem::path &fileName)
+{
+    // This array represents the command sent
+    // to the mpv instance along with it's arguments.
+    //
+    // In this case, we are going to load an
+    // audio file and specify the file name.
+
+    // Convert filesystem path to a string to account
+    // for platform differences between Windows and UNIX
+    std::string fileNameString = fileName.string();
+    std::array<const char*, 3> mpvCommand = {"loadfile", fileNameString.c_str(), nullptr};
+
+    // Send the command to the mpv instance.
+    if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
+    {
+        std::cerr << "Failed to load audio file\n";
+        return false;
+    }
+    
+    return true;
+}
+
+bool MPVPlayer::stop()
+{
+    // MPV command to stop the player
+    std::array<const char*, 3> mpvCommand = {"stop", nullptr};
+    if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
+    {
+        // Return false if command fails
+        return false;
+    }
+    return true;
+}
+
 bool MPVPlayer::togglePause()
 {
     // Check if we can get pause data
@@ -66,21 +112,20 @@ bool MPVPlayer::seek(const std::string time)
     return true;
 }
 
-bool MPVPlayer::play(const std::string &filename)
+std::string MPVPlayer::getProperty(const std::string &key) const
 {
-    // This array represents the command sent
-    // to the mpv instance along with it's arguments.
-    //
-    // In this case, we are going to load an
-    // audio file and specify the file name.
-    std::array<const char*, 3> mpvCommand = {"loadfile", filename.c_str(), nullptr};
-    // Send the command to the mpv instance.
-    if (mpv_command(mpvHandle, mpvCommand.data()) < 0)
-    {
-        std::cerr << "Failed to load audio file\n";
-        return false;
-    }
-    return true;
+    // Return an empty string if MPV is not initialized
+    if (!mpvHandle) return "";
+
+    // Get the property associated with the key
+    char *value = mpv_get_property_string(mpvHandle, key.c_str());
+
+    // If there was no property, return an empty string
+    if (!value) return "";
+
+    std::string metadataValue(value);
+    mpv_free(value);
+    return metadataValue;
 }
 
 std::string MPVPlayer::getMetadata(const std::string &key) const

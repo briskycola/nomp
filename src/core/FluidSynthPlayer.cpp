@@ -1,5 +1,5 @@
 #include "FluidSynthPlayer.hpp"
-#include <fluidsynth/synth.h>
+#include <fluidsynth/midi.h>
 #include <iostream>
 
 FluidSynthPlayer::FluidSynthPlayer()
@@ -10,7 +10,8 @@ FluidSynthPlayer::FluidSynthPlayer()
 
     audioDriver = nullptr;
     sfid = 0;
-    isPaused = false;
+    isReverb = false;
+    status = (fluid_player_status) fluid_player_get_status(player);
 
     // Disable all logging from FluidSynth
     fluid_set_log_function(FLUID_PANIC, NULL, NULL);
@@ -19,9 +20,11 @@ FluidSynthPlayer::FluidSynthPlayer()
     fluid_set_log_function(FLUID_INFO, NULL, NULL);
     fluid_set_log_function(FLUID_DBG, NULL, NULL);
 
-    // Change the period size to 2048 to avoid
-    // XRUNs on low-end hardware.
-    fluid_settings_setint(settings, "audio.period-size", 2048);
+    // Change the period size to 512
+    fluid_settings_setint(settings, "audio.period-size", 512);
+
+    // Change the synth gain to 0.5
+    fluid_settings_setnum(settings, "synth.gain", 0.5);
 }
 
 FluidSynthPlayer::~FluidSynthPlayer()
@@ -53,62 +56,66 @@ FluidSynthPlayer::~FluidSynthPlayer()
     }
 }
 
-bool FluidSynthPlayer::isValidFile(const std::string &midiFile, const std::string &soundfontFile)
+bool FluidSynthPlayer::isValidMidi(const std::filesystem::path &midiFile)
 {
-    if (!fluid_is_soundfont(soundfontFile.c_str()))
-    {
-        std::cerr << "Could not load SoundFont file\n";
-        return false;
-    }
-
-    if (!fluid_is_midifile(midiFile.c_str()))
-    {
-        std::cerr << "Could not load MIDI file\n";
-        return false;
-    }
+    if (!fluid_is_midifile(midiFile.string().c_str())) return false;
     return true;
 }
 
-bool FluidSynthPlayer::togglePause()
+bool FluidSynthPlayer::isValidSoundFont(const std::filesystem::path &soundFontFile)
 {
-    // Pause music.
-    if (!isPaused)
-    {
-        fluid_player_stop(player);
-        isPaused = true;
-    }
-    else
-    {
-        fluid_player_play(player);
-        isPaused = false;
-    }
-
+    if (!fluid_is_soundfont(soundFontFile.string().c_str())) return false;
     return true;
 }
 
-bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soundfontFile)
+bool FluidSynthPlayer::isIdle()
 {
-    // Check if the user entered a valid
-    // MIDI file and SoundFont file
-    if (!isValidFile(midiFile, soundfontFile)) return false;
+    status = (fluid_player_status) fluid_player_get_status(player);
+    if (status != FLUID_PLAYER_PLAYING) return true;
+    else return false;
+}
 
-    if (player)
-    {
-        fluid_player_stop(player);
-        fluid_player_join(player);
-        delete_fluid_player(player);
-        player = new_fluid_player(synth);
-    }
-
+int FluidSynthPlayer::loadSoundFont(const std::filesystem::path &soundFontFile)
+{
     if (sfid != 0)
     {
         fluid_synth_sfunload(synth, sfid, 1);
         sfid = 0;
     }
+
+    sfid = fluid_synth_sfload(synth, soundFontFile.string().c_str(), 1);
+    return sfid;
+}
+
+int FluidSynthPlayer::getCurrentTick()
+{
+    int currentTick = fluid_player_get_current_tick(player);
+    return currentTick;
+}
+
+int FluidSynthPlayer::getTotalTicks()
+{
+    int totalTicks = fluid_player_get_total_ticks(player);
+    return totalTicks;
+}
+
+bool FluidSynthPlayer::play(const std::filesystem::path &midiFile, const std::filesystem::path &soundFontFile)
+{
+    // Check if the user entered a valid
+    // MIDI file and SoundFont file
+    if (!isValidMidi(midiFile)) return false;
+    if (!isValidSoundFont(soundFontFile)) return false;
+
+    if (player)
+    {
+        stop();
+        delete_fluid_player(player);
+        player = new_fluid_player(synth);
+    }
     
     // Load SoundFont and MIDI file
-    sfid = fluid_synth_sfload(synth, soundfontFile.c_str(), 1);
-    fluid_player_add(player, midiFile.c_str());
+    sfid = loadSoundFont(soundFontFile.string().c_str());
+    fluid_player_add(player, midiFile.string().c_str());
 
     // Start the synthesizer.
     if (!audioDriver)
@@ -122,6 +129,82 @@ bool FluidSynthPlayer::play(const std::string &midiFile, const std::string &soun
         std::cerr << "Could not start MIDI playback\n";
         return false;
     }
+    status = (fluid_player_status) fluid_player_get_status(player);
+    return true;
+}
 
+bool FluidSynthPlayer::stop()
+{
+    // Disable reverb
+    // Stop FluidSynth, but don't destroy the instance
+    fluid_player_stop(player);
+    fluid_player_join(player);
+    fluid_synth_all_notes_off(synth, -1);
+    fluid_synth_all_sounds_off(synth, -1);
+    return true;
+}
+
+void FluidSynthPlayer::seek(double time)
+{
+    // To seek in FluidSynth is much different compared to
+    // regular music files.
+    //
+    // Because MIDI music is entirely processed by the
+    // computer in real-time, we need to extract the
+    // tempo and division (meter) from the MIDI file itself:
+    //
+    // Tempo -> The speed of the song
+    // Division -> The meter of the song
+    int tempo = fluid_player_get_midi_tempo(player);
+    int division = fluid_player_get_division(player);
+
+    // Because FluidSynth works in ticks, we need to
+    // convert the ticks to seconds
+    double ticksPerSecond = (double) division * 1000000.0 / tempo;
+    int deltaTicks = (int) (time * ticksPerSecond);
+
+    // Get current tick, which represents the current point
+    // in time in the music
+    int currentTick = fluid_player_get_current_tick(player);
+    fluid_player_seek(player, currentTick + deltaTicks);
+}
+
+void FluidSynthPlayer::reverb()
+{
+    if (!isReverb)
+    {
+        // Apply reverb settings
+        fluid_settings_setnum(settings, "synth.reverb.damp", 0.6);
+        fluid_settings_setnum(settings, "synth.reverb.level", 1.0);
+        fluid_settings_setnum(settings, "synth.reverb.room-size", 1.0);
+        fluid_settings_setnum(settings, "synth.reverb.width", 3.0);
+        isReverb = true;
+    }
+
+    else
+    {
+        // Go back to default settings
+        fluid_settings_setnum(settings, "synth.reverb.damp", 0.3);
+        fluid_settings_setnum(settings, "synth.reverb.level", 0.7);
+        fluid_settings_setnum(settings, "synth.reverb.room-size", 0.5);
+        fluid_settings_setnum(settings, "synth.reverb.width", 0.8);
+        isReverb = false;
+    }
+}
+
+bool FluidSynthPlayer::togglePause()
+{
+    // Pause music.
+    status = (fluid_player_status) fluid_player_get_status(player);
+    if (status == FLUID_PLAYER_PLAYING)
+    {
+        fluid_player_stop(player);
+        status = (fluid_player_status) fluid_player_get_status(player);
+    }
+    else
+    {
+        fluid_player_play(player);
+        status = (fluid_player_status) fluid_player_get_status(player);
+    }
     return true;
 }
