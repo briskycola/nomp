@@ -22,7 +22,7 @@ class NompTUI
         // false -> list, true -> queue
         bool isQueue;
 
-        // Dynamic array of windows
+        // Focusable frame windows; list contents are rendered from pads.
         std::vector<WINDOW*> windows;
         std::vector<WINDOW*>::iterator currentWindow;
 
@@ -32,6 +32,12 @@ class NompTUI
         WINDOW *soundFontList;
         WINDOW *about;
         WINDOW *queueList;
+        WINDOW *songListPad;
+        WINDOW *soundFontListPad;
+        WINDOW *queueListPad;
+        int songListScroll;
+        int soundFontListScroll;
+        int queueListScroll;
 
         // Smart pointers for audio backends
         std::unique_ptr<GetSongs> getSongs;
@@ -39,6 +45,9 @@ class NompTUI
         std::unique_ptr<FluidSynthPlayer> fluidSynthPlayer;
 
     public:
+        NompTUI();
+        ~NompTUI();
+
         // Dynamic array of audio files in directory
         std::vector<std::filesystem::path> audioFiles;
         std::vector<std::filesystem::path>::iterator currentSong;
@@ -67,6 +76,8 @@ class NompTUI
         void displayScreen();
         void displayAbout();
         void deleteWindows();
+        void updateListPads();
+        void refreshListPad(WINDOW *frame, WINDOW *pad, int scroll);
         std::string prettyPrintTime(int totalSeconds);
 
         // Media controls

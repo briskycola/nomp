@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 #include <sstream>
+#include <algorithm>
 
 #if defined(__linux__) || defined(__APPLE__)
     #include <csignal>
@@ -24,6 +25,17 @@
 #define HOVERING 1
 #define NEUTRAL 2
 #define SELECTED 3
+
+NompTUI::NompTUI() : songList(nullptr), currentlyPlaying(nullptr), soundFontList(nullptr),
+    about(nullptr), queueList(nullptr), songListPad(nullptr), soundFontListPad(nullptr),
+    queueListPad(nullptr), songListScroll(0), soundFontListScroll(0), queueListScroll(0),
+    userInput(0)
+{}
+
+NompTUI::~NompTUI()
+{
+    deleteWindows();
+}
 
 // Used asynchronously to check if the window
 // needs to be resized
@@ -82,6 +94,10 @@ void NompTUI::initCurses()
     about = newwin(bottom - rowSplit, columnThree - columnTwo, rowSplit, columnTwo);
     queueList = newwin(bottom - top, right - columnThree, top, columnThree);
 
+    songListPad = newpad(1, 1);
+    soundFontListPad = newpad(1, 1);
+    queueListPad = newpad(41, 1);
+
     // Allow windows to use keypad
     keypad(stdscr, TRUE);
     keypad(currentlyPlaying, TRUE);
@@ -105,6 +121,7 @@ void NompTUI::initCurses()
 
     // Iterator at the start of vector
     currentWindow = windows.begin();
+    updateListPads();
 }
 
 // Initialize MPV and Fluidsynth players
@@ -123,6 +140,7 @@ void NompTUI::initPaths()
     soundFontFiles = getSongs->getFilePaths("SoundFonts");
     currentSong = audioFiles.begin();
     currentSoundFont = soundFontFiles.begin();
+    updateListPads();
 }
 
 // Initialize Queue for songs
@@ -154,7 +172,7 @@ void NompTUI::nextInQueue()
         displayQueue();
         queueTop++;
         if(queueTop == queue.end()) queueTop--;
-        play(*queueTop, *currentSoundFont);
+        play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
     }
 }
 
@@ -252,56 +270,70 @@ void NompTUI::displaySongs() //display contents of song list to songList
 {
     // Get width of the window to truncate characters properly
     int maxWidth = getmaxx(songList);
-    int startX = 2;
-    int properWidth = maxWidth - startX - 1;
+    int properWidth = maxWidth - 3;
     if (properWidth < 0) properWidth = 0;
+    if (!audioFiles.empty())
+    {
+        int selectedRow = static_cast<int>(std::distance(audioFiles.begin(), currentSong)) * 2 + 1;
+        int viewRows = std::max(1, getmaxy(songList) - 4);
+        if (selectedRow < songListScroll) songListScroll = selectedRow;
+        if (selectedRow >= songListScroll + viewRows) songListScroll = selectedRow - viewRows + 1;
+    }
 
+    werase(songListPad);
     for (long unsigned int fi = 0; fi < audioFiles.size(); fi++)
     {
         // print just the name on each descending
         // converting from path > string > const char*
         std::string filenameString = audioFiles[fi].filename().string();
 
-        if (*currentSong == audioFiles[fi])
+        if (!audioFiles.empty() && currentSong == audioFiles.begin() + fi)
         {
-            wattron(songList, COLOR_PAIR(NEUTRAL));
-            wattron(songList, A_BOLD);
-            mvwprintw(songList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
-            wattroff(songList, COLOR_PAIR(NEUTRAL));
-            wattroff(songList, A_BOLD);
+            wattron(songListPad, COLOR_PAIR(NEUTRAL));
+            wattron(songListPad, A_BOLD);
+            mvwprintw(songListPad, 2*fi+1, 1, "%-*.*s", properWidth, properWidth, filenameString.c_str());
+            wattroff(songListPad, COLOR_PAIR(NEUTRAL));
+            wattroff(songListPad, A_BOLD);
         }
 
-        else mvwprintw(songList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
-        wrefresh(*currentWindow);
+        else mvwprintw(songListPad, 2*fi+1, 1, "%-*.*s", properWidth, properWidth, filenameString.c_str());
     }
+    refreshListPad(songList, songListPad, songListScroll);
 }
 
 void NompTUI::displaySoundFonts() //display contents of song list to songList
 {
     // Get width of the window to truncate characters properly
     int maxWidth = getmaxx(soundFontList);
-    int startX = 2;
-    int properWidth = maxWidth - startX - 1;
+    int properWidth = maxWidth - 3;
     if (properWidth < 0) properWidth = 0;
+    if (!soundFontFiles.empty())
+    {
+        int selectedRow = static_cast<int>(std::distance(soundFontFiles.begin(), currentSoundFont)) * 2 + 1;
+        int viewRows = std::max(1, getmaxy(soundFontList) - 4);
+        if (selectedRow < soundFontListScroll) soundFontListScroll = selectedRow;
+        if (selectedRow >= soundFontListScroll + viewRows) soundFontListScroll = selectedRow - viewRows + 1;
+    }
 
+    werase(soundFontListPad);
     for (long unsigned int fi = 0; fi < soundFontFiles.size(); fi++)
     {
         // print just the name on each descending
         // converting from path > string > const char*
         std::string filenameString = soundFontFiles[fi].filename().string();
 
-        if (*currentSoundFont == soundFontFiles[fi])
+        if (!soundFontFiles.empty() && currentSoundFont == soundFontFiles.begin() + fi)
         {
-            wattron(soundFontList, COLOR_PAIR(NEUTRAL));
-            wattron(soundFontList, A_BOLD);
-            mvwprintw(soundFontList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
-            wattroff(soundFontList, COLOR_PAIR(NEUTRAL));
-            wattroff(soundFontList, A_BOLD);
+            wattron(soundFontListPad, COLOR_PAIR(NEUTRAL));
+            wattron(soundFontListPad, A_BOLD);
+            mvwprintw(soundFontListPad, 2*fi+1, 1, "%-*.*s", properWidth, properWidth, filenameString.c_str());
+            wattroff(soundFontListPad, COLOR_PAIR(NEUTRAL));
+            wattroff(soundFontListPad, A_BOLD);
         }
 
-        else mvwprintw(soundFontList, 2*fi+5, startX, "%-*.*s", properWidth-1, properWidth-1, filenameString.c_str());
-        wrefresh(*currentWindow);
+        else mvwprintw(soundFontListPad, 2*fi+1, 1, "%-*.*s", properWidth, properWidth, filenameString.c_str());
     }
+    refreshListPad(soundFontList, soundFontListPad, soundFontListScroll);
 }
 
 // Display contents of song list to songList
@@ -309,37 +341,75 @@ void NompTUI::displayQueue()
 {
     // Get width of the window to truncate characters properly
     int maxWidth = getmaxx(queueList);
-    int startX = 2;
-    int properWidth = maxWidth - startX - 1;
+    int properWidth = maxWidth - 3;
     if (properWidth < 0) properWidth = 0;
+    if (!queue.empty())
+    {
+        int selectedRow = static_cast<int>(std::distance(queue.begin(), queueTop)) * 2 + 1;
+        int viewRows = std::max(1, getmaxy(queueList) - 4);
+        if (selectedRow < queueListScroll) queueListScroll = selectedRow;
+        if (selectedRow >= queueListScroll + viewRows) queueListScroll = selectedRow - viewRows + 1;
+    }
 
     // TODO: keeps highlighting multiple, previous fix would only highlight the first one
+    werase(queueListPad);
     for (long unsigned int q = 0; q < queue.size(); q++)
     {
         // Print just the name on each descending
         // converting from path > string > const char*
         std::string queuedSongString = queue[q].filename().string();
 
-        if (std::distance(std::begin(queue), queueTop) == (long int) q)
+        if (!queue.empty() && std::distance(std::begin(queue), queueTop) == (long int) q)
         { 
-            wattron(queueList, COLOR_PAIR(HOVERING));
-            wattron(queueList, A_BOLD);
-            mvwprintw(queueList, 2*q+5, startX, "%-*.*s", properWidth-1, properWidth-1, queuedSongString.c_str());
-            wattroff(queueList, A_BOLD);
-            wattroff(queueList, COLOR_PAIR(HOVERING));
+            wattron(queueListPad, COLOR_PAIR(HOVERING));
+            wattron(queueListPad, A_BOLD);
+            mvwprintw(queueListPad, 2*q+1, 1, "%-*.*s", properWidth, properWidth, queuedSongString.c_str());
+            wattroff(queueListPad, A_BOLD);
+            wattroff(queueListPad, COLOR_PAIR(HOVERING));
         }
 
-        else mvwprintw(queueList, 2*q+5, startX, "%-*.*s", properWidth-1, properWidth-1, queuedSongString.c_str());
-        wrefresh(queueList);
+        else mvwprintw(queueListPad, 2*q+1, 1, "%-*.*s", properWidth, properWidth, queuedSongString.c_str());
     }
-        
+    refreshListPad(queueList, queueListPad, queueListScroll);
 }
 
 // Delete windows
 void NompTUI::deleteWindows()
 {
+    if (songListPad) delwin(songListPad);
+    if (soundFontListPad) delwin(soundFontListPad);
+    if (queueListPad) delwin(queueListPad);
+    songListPad = soundFontListPad = queueListPad = nullptr;
+    if (currentlyPlaying) delwin(currentlyPlaying);
     for (auto a : windows) { if (a) delwin(a); }
     windows.clear();
+    songList = currentlyPlaying = soundFontList = about = queueList = nullptr;
+    currentWindow = windows.end();
+}
+
+void NompTUI::updateListPads()
+{
+    auto replacePad = [](WINDOW *&pad, int rows, int cols)
+    {
+        if (pad) delwin(pad);
+        pad = newpad(std::max(1, rows), std::max(1, cols));
+    };
+    if (!songList) return;
+    replacePad(songListPad, std::max(1, static_cast<int>(audioFiles.size()) * 2 + 1), getmaxx(songList) - 2);
+    replacePad(soundFontListPad, std::max(1, static_cast<int>(soundFontFiles.size()) * 2 + 1), getmaxx(soundFontList) - 2);
+    replacePad(queueListPad, std::max(41, static_cast<int>(queue.size()) * 2 + 1), getmaxx(queueList) - 2);
+}
+
+void NompTUI::refreshListPad(WINDOW *frame, WINDOW *pad, int scroll)
+{
+    if (!frame || !pad) return;
+    const int viewRows = std::max(0, getmaxy(frame) - 4);
+    const int viewCols = std::max(0, getmaxx(frame) - 2);
+    if (viewRows == 0 || viewCols == 0) return;
+    const int maxScroll = std::max(0, getmaxy(pad) - viewRows);
+    scroll = std::min(std::max(0, scroll), maxScroll);
+    pnoutrefresh(pad, scroll, 0, getbegy(frame) + 3, getbegx(frame) + 1,
+                 getbegy(frame) + 2 + viewRows, getbegx(frame) + viewCols);
 }
 
 // Convert seconds to corresponding minutes and seconds
@@ -480,8 +550,7 @@ void NompTUI::displayScreen()
     displaySongs();
     displaySoundFonts();
     displayQueue();
-    wrefresh(songList);
-    wrefresh(queueList);
+    doupdate();
 }
 
 void NompTUI::displayAbout()
@@ -523,16 +592,16 @@ void NompTUI::songListSelect()
     {
         case '\n': case KEY_ENTER:
             if (audioFiles.empty()) break;
-            play(*currentSong, *currentSoundFont);
+            play(*currentSong, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             isQueue = false;
             break;
             
         case KEY_DOWN:
-            if (currentSong != audioFiles.end()-1) currentSong++;
+            if (!audioFiles.empty() && currentSong != audioFiles.end()-1) currentSong++;
             break;
 
         case KEY_UP:
-            if (currentSong != audioFiles.begin()) currentSong--;  
+            if (!audioFiles.empty() && currentSong != audioFiles.begin()) currentSong--;
             break;
 
         case KEY_RIGHT: case 'd':
@@ -565,7 +634,8 @@ void NompTUI::songListSelect()
             if (audioFiles.empty()) break;
             if (queue.size() >= 20) break;
             queue.insert(queue.begin(), *currentSong);
-            play(*queueTop, *currentSoundFont);
+            queueTop = queue.begin();
+            play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             displayQueue();
             isQueue = true;
             break;
@@ -576,6 +646,7 @@ void NompTUI::songListSelect()
             if (queue.size() >= 20) break;
             if (queue.size() > 0) queue.insert(queue.begin()+1, *currentSong);
             else queue.insert(queue.begin(), *currentSong);
+            queueTop = queue.begin();
             displayQueue();
             break;
 
@@ -584,6 +655,7 @@ void NompTUI::songListSelect()
             if (audioFiles.empty()) break;
             if (queue.size() >= 20) break;
             queue.push_back(*currentSong);
+            queueTop = queue.begin();
             displayQueue();
             break;
         
@@ -598,17 +670,19 @@ void NompTUI::songListSelect()
             break;
 
         case '<':
+            if (queue.empty()) break;
             wclear(queueList);
             displayQueue();
             if(queueTop != queue.begin()) queueTop--;
-            play(*queueTop, *currentSoundFont);
+            play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             break;
 
         case '>':
+            if (queue.empty()) break;
             wclear(queueList);
             displayQueue();
-            if(queueTop != queue.end()-1) queueTop++;
-            play(*queueTop, *currentSoundFont);
+            if(!queue.empty() && queueTop != queue.end()-1) queueTop++;
+            play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             break;
                             
         default: break;
@@ -623,18 +697,18 @@ void NompTUI::soundFontSelect()
     {
         case '\n': case KEY_ENTER:
             if (soundFontFiles.empty()) break;
-            if (fluidSynthPlayer->isValidSoundFont(*currentSoundFont))
+            if (fluidSynthPlayer->isValidSoundFont((soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont)))
             {
-                fluidSynthPlayer->loadSoundFont(*currentSoundFont);
+                fluidSynthPlayer->loadSoundFont((soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             }
             break;
             
         case KEY_DOWN:
-            if (currentSoundFont != soundFontFiles.end()-1) currentSoundFont++;
+            if (!soundFontFiles.empty() && currentSoundFont != soundFontFiles.end()-1) currentSoundFont++;
             break;
 
         case KEY_UP:
-            if (currentSoundFont != soundFontFiles.begin()) currentSoundFont--;  
+            if (!soundFontFiles.empty() && currentSoundFont != soundFontFiles.begin()) currentSoundFont--;
             break;
 
         case KEY_LEFT: case 'a':
@@ -678,17 +752,19 @@ void NompTUI::soundFontSelect()
             break;
 
         case '<':
+            if (queue.empty()) break;
             wclear(queueList);
             displayQueue();
             if(queueTop != queue.begin()) queueTop--;
-            play(*queueTop, *currentSoundFont);
+            play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             break;
 
         case '>':
+            if (queue.empty()) break;
             wclear(queueList);
             displayQueue();
             if(queueTop != queue.end()-1) queueTop++;
-            play(*queueTop, *currentSoundFont);
+            play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             break;
 
         default: break;
@@ -744,17 +820,19 @@ void NompTUI::aboutSelect()
             break;
 
         case '<':
+            if (queue.empty()) break;
             wclear(queueList);
             displayQueue();
             if(queueTop != queue.begin()) queueTop--;
-            play(*queueTop, *currentSoundFont);
+            play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             break;
             
         case '>':
+            if (queue.empty()) break;
             wclear(queueList);
             displayQueue();
             if(queueTop != queue.end()-1) queueTop++;
-            play(*queueTop, *currentSoundFont);
+            play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             break;
 
         default: break;
@@ -774,7 +852,7 @@ void NompTUI::queueSelect()
 
         case '\n': case KEY_ENTER:
             if (queue.size() == 0) break;
-            play(*queueTop, *currentSoundFont);
+            play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             isQueue = true;
             break;
             
@@ -809,17 +887,19 @@ void NompTUI::queueSelect()
             break;
             
         case '<':
+            if (queue.empty()) break;
             wclear(queueList);
             displayQueue();
             if(queueTop != queue.begin()) queueTop--;
-            play(*queueTop, *currentSoundFont);
+            play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             break;
 
         case '>':
+            if (queue.empty()) break;
             wclear(queueList);
             displayQueue();
             if(queueTop != queue.end()-1) queueTop++;
-            play(*queueTop, *currentSoundFont);
+            play(*queueTop, (soundFontFiles.empty() ? std::filesystem::path{} : *currentSoundFont));
             break;
         
         default: break;
