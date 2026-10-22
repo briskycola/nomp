@@ -1,6 +1,7 @@
 #include "MPVPlayer.hpp"
 #include <iostream>
 #include <array>
+#include <stdexcept>
 
 MPVPlayer::MPVPlayer()
 {
@@ -14,6 +15,8 @@ MPVPlayer::MPVPlayer()
     // Initalize the new mpv instance.
     if (mpv_initialize(mpvHandle) < 0)
     {
+        mpv_terminate_destroy(mpvHandle);
+        mpvHandle = nullptr;
         throw std::runtime_error("Failed to intialize mpv instance");
     }
 

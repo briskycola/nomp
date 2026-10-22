@@ -28,6 +28,7 @@ int main(int argc, char **argv)
     freopen("/dev/null", "w", stderr);
 #endif
     display(tui);
+    tui.deleteWindows();
     endwin();
     return 0;
 }

@@ -1,12 +1,28 @@
 #include "FluidSynthPlayer.hpp"
 #include <fluidsynth/midi.h>
 #include <iostream>
+#include <stdexcept>
 
 FluidSynthPlayer::FluidSynthPlayer()
 {
     settings = new_fluid_settings();
+    if (!settings) throw std::runtime_error("Failed to create FluidSynth settings");
     synth = new_fluid_synth(settings);
+    if (!synth)
+    {
+        delete_fluid_settings(settings);
+        settings = nullptr;
+        throw std::runtime_error("Failed to create FluidSynth synthesizer");
+    }
     player = new_fluid_player(synth);
+    if (!player)
+    {
+        delete_fluid_synth(synth);
+        delete_fluid_settings(settings);
+        synth = nullptr;
+        settings = nullptr;
+        throw std::runtime_error("Failed to create FluidSynth player");
+    }
 
     audioDriver = nullptr;
     sfid = 0;
